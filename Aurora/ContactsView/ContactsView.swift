@@ -7,12 +7,14 @@ class CreateNewMessageViewModel: ObservableObject {
     @Published var users = [ChatUser]()          // Stores all fetched friends
     @Published var currentUser: ChatUser?
     @Published var filteredUsers = [ChatUser]()  // Stores search results
+    @Published var isLoading = false
     @Published var errorMessage = ""             // Stores error messages
     @Published var searchText = "" {             // Stores current search query
         didSet {
             filterUsers()
         }
     }
+    @FocusState private var isFocused: Bool
     
     init() {
         fetchAllFriends()
@@ -24,6 +26,7 @@ class CreateNewMessageViewModel: ObservableObject {
             self.errorMessage = "Could not find firebase uid"
             return
         }
+        isLoading = true
         
         FirebaseManager.shared.firestore.collection("friends").document(uid).collection("friend_list")
             .getDocuments { documentsSnapshot, error in
@@ -42,6 +45,7 @@ class CreateNewMessageViewModel: ObservableObject {
                 
                 // Sort users by the first letter of their email
                 self.users.sort { $0.username.lowercased() < $1.username.lowercased() }
+                self.isLoading = false
                 
                 // Initialize filtered users with all users
                 self.filterUsers()
@@ -84,7 +88,7 @@ class CreateNewMessageViewModel: ObservableObject {
             self.errorMessage = "Could not find firebase uid"
             return
         }
-
+        
         FirebaseManager.shared.firestore.collection("users").document(uid).getDocument { snapshot, error in
             if let error = error {
                 self.errorMessage = "Failed to fetch current user: \(error)"
@@ -111,6 +115,7 @@ struct CreateNewMessageView: View {
     @State private var chatUser: ChatUser? = nil
     @State private var currentUser: ChatUser? = nil
     @StateObject private var chatLogViewModel = ChatLogViewModel(chatUser: nil)
+    @FocusState private var isFocused: Bool
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -123,19 +128,24 @@ struct CreateNewMessageView: View {
         generator.prepare()
         generator.impactOccurred()
     }
-
+    
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.976, green: 0.980, blue: 1.0).ignoresSafeArea()
-
+                Color(red: 0.976, green: 0.980, blue: 1.0)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        isFocused = false
+                    }
+                
                 VStack {
                     topBar
                     SearchBar(text: $vm.searchText) {
                         vm.filterUsers()
                     }
+                    .focused($isFocused)
                     .padding(.vertical, 4)
-
+                    
                     content
                 }
                 .navigationBarHidden(true)
@@ -169,7 +179,7 @@ struct CreateNewMessageView: View {
             .first?
             .safeAreaInsets.top ?? 0
     }
-
+    
     // MARK: - Top Bar
     private var topBar: some View {
         ZStack {
@@ -201,11 +211,23 @@ struct CreateNewMessageView: View {
         }
         .frame(height: UIScreen.main.bounds.height * 0.07)
     }
-
+    
     // MARK: - Content
     private var content: some View {
         ScrollView {
-            if !vm.errorMessage.isEmpty {
+            if vm.isLoading {
+                VStack {
+                    Spacer()
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .padding(.top, UIScreen.main.bounds.height * 0.3)
+                    Text("Loading friends...")
+                        .foregroundColor(.gray)
+                        .padding(.top, 16)
+                    Spacer()
+                }
+            }
+            else if !vm.errorMessage.isEmpty {
                 Text(vm.errorMessage)
                     .foregroundColor(.red)
                     .padding()
@@ -225,8 +247,11 @@ struct CreateNewMessageView: View {
                 Spacer(minLength: UIScreen.main.bounds.height * 0.1)
             }
         }
+        .onTapGesture{
+            isFocused = false
+        }
     }
-
+    
     // MARK: - Section Header
     private func sectionHeader(_ key: String) -> some View {
         HStack {
@@ -238,7 +263,7 @@ struct CreateNewMessageView: View {
         }
         .padding(.vertical, 4)
     }
-
+    
     // MARK: - User Row
     private func userRow(_ user: ChatUser) -> some View {
         Button {
@@ -276,13 +301,13 @@ struct CreateNewMessageView: View {
             .padding(.bottom, 0)
         }
     }
-
+    
     // MARK: - Format Timestamp
     private func formatTimestamp(_ timestamp: Timestamp) -> String {
         let date = timestamp.dateValue()
         let formatter = DateFormatter()
         let calendar = Calendar.current
-
+        
         if calendar.isDateInToday(date) {
             formatter.dateFormat = "HH:mm"
             return formatter.string(from: date)
@@ -303,6 +328,7 @@ struct CreateNewMessageView: View {
 struct SearchBar: View {
     @Binding var text: String
     var onSearch: () -> Void  // Callback for the search action
+    // @FocusState private var isFocused: Bool
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -330,6 +356,9 @@ struct SearchBar: View {
                 .onSubmit {
                     onSearch()  // Trigger search when "Search" key is pressed
                 }
+            // .onTapGesture {
+            //     isFocused = true
+            // }
             
             
             // Clear button (conditionally shown)

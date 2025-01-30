@@ -10,6 +10,7 @@ class MainMessagesViewModel: ObservableObject {
     @Published var chatUser: ChatUser?
     @Published var isUserCurrentlyLoggedOut = false
     @Published var users = [ChatUser]()
+    @Published var isLoading = false
 
     var messageListener: ListenerRegistration?
     var friendRequestListener: ListenerRegistration? // 新增好友申请监听器变量
@@ -17,6 +18,7 @@ class MainMessagesViewModel: ObservableObject {
     @Published var hasNewFriendRequest = false // 用于跟踪是否有新的好友申请
     @AppStorage("lastCheckedTimestamp") var lastCheckedTimestamp: Double = 0
     @AppStorage("lastLikesCount") var lastLikesCount: Int = 0
+    
     
 
     init() {
@@ -27,7 +29,7 @@ class MainMessagesViewModel: ObservableObject {
         }
         fetchCurrentUser()
         setupFriendListListener()
-        setupFriendRequestListener()  // 设置好友申请监听器
+        setupFriendRequestListener()
     }
 
     func setupFriendListListener() {
@@ -35,6 +37,7 @@ class MainMessagesViewModel: ObservableObject {
             self.errorMessage = "Could not find firebase uid"
             return
         }
+        isLoading = true
 
         messageListener?.remove()
         messageListener = nil
@@ -77,7 +80,9 @@ class MainMessagesViewModel: ObservableObject {
 
                     DispatchQueue.main.async {
                         self.users = pinnedUsers + unpinnedUsers
+                        self.isLoading = false
                     }
+                    
                 }
             }
     }
@@ -126,6 +131,7 @@ class MainMessagesViewModel: ObservableObject {
             self.errorMessage = "Could not find firebase uid"
             return
         }
+        isLoading = true
 
         FirebaseManager.shared.firestore.collection("users").document(uid).getDocument { snapshot, error in
             if let error = error {
@@ -142,6 +148,7 @@ class MainMessagesViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.chatUser = ChatUser(data: data)
             }
+            
         }
     }
     
@@ -236,7 +243,19 @@ struct MainMessagesView: View {
                 // Background Color
                 Color(red: 0.976, green: 0.980, blue: 1.0)
                     .ignoresSafeArea()
-                if vm.users.isEmpty{
+                if vm.isLoading {
+                    VStack {
+                        Spacer()
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .padding(.top, UIScreen.main.bounds.height * 0.3)
+                        Text("Loading friends...")
+                            .foregroundColor(.gray)
+                            .padding(.top, 16)
+                        Spacer()
+                    }
+                }
+                else if vm.users.isEmpty{
                     Image("lonelyimageformainmessageview")
                 }
                 if showCarouselView{
@@ -467,7 +486,7 @@ struct MainMessagesView: View {
                         chatLogViewModel.markLatestMessageAsSeen()
                         chatLogViewModel.startListeningForActiveStatus()
                         chatLogViewModel.startListeningForSavingTrigger()
-                        //chatLogViewModel.startListeningForImages()
+                        chatLogViewModel.startListeningForImages()
                         chatLogViewModel.fetchLatestMessages()
                     }
                     .onDisappear{

@@ -82,11 +82,18 @@ class AddFriendViewModel: ObservableObject {
                 self.recommendedUsers = self.allUsers.filter { user in
                     contactNumbers.contains(user.phoneNumber)
                 }
+
+                
                 
                 // Filter random users excluding recommended users
                 let recommendedUIDs = Set(self.recommendedUsers.map { $0.uid })
                 self.randomUsers = self.allUsers.filter { !recommendedUIDs.contains($0.uid) }
-                
+
+                // Randomly select 5 additional users to prevent empty list
+                let additionalRandomUsers = self.allUsers.shuffled().prefix(5)
+                self.recommendedUsers.append(contentsOf: additionalRandomUsers)
+                print("Recommended Users: \(self.recommendedUsers.count)")
+
                 // Sort random users alphabetically
                 self.randomUsers.sort { $0.username.lowercased() < $1.username.lowercased() }
                 

@@ -61,10 +61,21 @@ class FriendGroupViewModel: ObservableObject {
                 self.updateHasPostedStatus(for: userId)
                 // 重新获取最新的响应数据
                 self.fetchLatestResponses(for: userId)
+                return
             } else {
                 print("Failed to submit response: \(error?.localizedDescription ?? "Unknown error")")
             }
         }
+
+        DispatchQueue.main.async {
+            self.responseText = ""
+            self.showResponseInput = false
+        }
+        print("Response submitted successfully")
+        // 更新 hasPosted 状态
+        self.updateHasPostedStatus(for: userId)
+        // 重新获取最新的响应数据
+        self.fetchLatestResponses(for: userId)
     }
     
     func fetchLatestResponses(for userId: String) {
@@ -263,12 +274,6 @@ struct FriendGroupView: View {
         generator.impactOccurred()
     }
     
-    func generateHapticFeedbackHeavy() {
-        let generator = UIImpactFeedbackGenerator(style: .heavy)
-        generator.prepare()
-        generator.impactOccurred()
-    }
-    
     init(selectedUser: ChatUser) {
         self.selectedUser = selectedUser
         _vm = StateObject(wrappedValue: FriendGroupViewModel(selectedUser: selectedUser))
@@ -389,7 +394,7 @@ struct FriendGroupView: View {
                                             .animation(.spring(), value: offset)
                                             .zIndex(Double(vm.responses.count - index))
                                             .gesture(
-                                                DragGesture()
+                                                DragGesture(minimumDistance: 3)
                                                     .onChanged { gesture in
                                                         if index == topCardIndex {
                                                             offset = gesture.translation
@@ -543,15 +548,20 @@ struct FriendGroupView: View {
         
         return boundingBox.height + 80 // Add 80 for date, spacing, and padding
     }
+
 }
 
 struct Comment: Identifiable {
     let id = UUID()
+    let docId: String
     let uid: String
     let userName: String
     let profileImageUrl: String
     let content: String
     let timestamp: Date // 添加时间戳字段
+    let replyTarget: String? // 添加回复目标字段
+    let parentCommentId: String? // 新增，用来存父评论的文档ID
+    let rootCommentId: String? // 新增，用来存根评论的文档ID
 }
 
 
@@ -565,12 +575,20 @@ struct ResponseCard: View {
     @State private var reportContent = ""
     @State private var comments: [Comment] = []
     @State private var newCommentText = "" // 新增用于输入评论的文本状态
-    
+    @FocusState private var isFocused: Bool
+    @State private var replyComment: Comment? = nil
+
+    @State private var expandedComments: Set<String> = [] // 新增，用于控制子评论的显示与隐藏
+    @State private var showInputField = false // 新增状态变量
+    @State private var showDeleteAlert = false // 新增状态变量，用于控制删除确认弹窗
+    @State private var commentToDelete: Comment? // 新增状态变量，用于存储待删除的评论
+
     var body: some View {
         ZStack {
             if isFlipped {
                 // 卡片背面（显示评论）
                 cardBackView
+                
             } else {
                 // 卡片正面（显示帖子内容）
                 cardFrontView
@@ -590,38 +608,110 @@ struct ResponseCard: View {
                height: UIScreen.main.bounds.height * 0.42253)
         .aspectRatio(contentMode: .fit)
         .sheet(isPresented: $showReportSheet) {
-            VStack(spacing: 20) {
-                Text("Report this response").font(.headline)
+            ZStack {
+                Color(red: 0.976, green: 0.980, blue: 1.0)
+                    .ignoresSafeArea()
                 
-                TextField("Enter your report reason", text: $reportContent)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                
-                HStack {
-                    Button(action: {
-                        // 关闭报告视图
-                        showReportSheet = false
-                    }) {
-                        Text("Cancel")
-                            .padding()
-                            .background(Color.gray.opacity(0.3))
-                            .cornerRadius(8)
+                VStack(spacing: 0) {
+                    // Header
+                    ZStack {
+                        Color.white
+                            .shadow(color: Color.black.opacity(0.05), radius: 2, y: 2)
+                        
+                        Text("Report Response")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
                     }
+                    .frame(height: 60)
                     
-                    Button(action: {
-                        // 提交报告
-                        reportFriend()
-                        showReportSheet = false
-                    }) {
-                        Text("Submit")
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+                    // Content
+                    VStack(spacing: 24) {
+                        // Report Input Field
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Why are you reporting this response?")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                .padding(.leading, 4)
+                            
+                            TextEditor(text: $reportContent)
+                                .frame(height: 120)
+                                .padding(12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white)
+                                        .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                        
+                        // Notice Text
+                        Text("Your report helps us maintain the quality of responses. We'll review this and take appropriate action if needed.")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        // Buttons
+                        HStack(spacing: 16) {
+                            // Cancel Button
+                            Button(action: {
+                                showReportSheet = false
+                            }) {
+                                Text("Cancel")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.white)
+                                            .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.2), lineWidth: 1)
+                                    )
+                            }
+                            
+                            // Submit Button
+                            Button(action: {
+                                reportFriend()
+                                showReportSheet = false
+                            }) {
+                                Text("Submit Report")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                            .shadow(color: Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.3), radius: 4, y: 2)
+                                    )
+                            }
+                        }
                     }
+                    .padding(24)
+                    
+                    Spacer()
                 }
             }
-            .padding()
+            .presentationDetents([.height(400)])
+        }
+        .alert(isPresented: $showDeleteAlert) {
+            Alert(
+                title: Text("Delete Comment"),
+                message: Text("Are you sure you want to delete this comment?"),
+                primaryButton: .destructive(Text("Delete")) {
+                    if let commentToDelete = commentToDelete {
+                        deleteComment(comment: commentToDelete)
+                    }
+                },
+                secondaryButton: .cancel()
+            )
         }
     }
     
@@ -691,14 +781,37 @@ struct ResponseCard: View {
                     .multilineTextAlignment(.center)
                     .position(x: w / 2, y: h / 2)
                 
-                // 头像
-                WebImage(url: URL(string: response.profileImageUrl))
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: profileSize, height: profileSize)
-                    .clipShape(Circle())
-                    .position(x: sidePadding + profileSize / 2,
-                              y: h - bottomPadding - profileSize / 2)
+                // 头像 //插个眼
+                if response.uid != getCurrentUser().uid {
+                    NavigationLink(
+                        destination: ProfileView(
+                            chatUser: ChatUser(data: [
+                                "uid": response.uid,
+                                "userName": response.username,
+                                "profileImageUrl": response.profileImageUrl
+                            ]),
+                            currentUser: getCurrentUser(),
+                            isCurrentUser: false
+                        )
+                    ) {
+                        WebImage(url: URL(string: response.profileImageUrl))
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: profileSize, height: profileSize)
+                            .clipShape(Circle())
+                            .position(x: sidePadding + profileSize / 2,
+                                    y: h - bottomPadding - profileSize / 2)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    WebImage(url: URL(string: response.profileImageUrl))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: profileSize, height: profileSize)
+                        .clipShape(Circle())
+                        .position(x: sidePadding + profileSize / 2,
+                                y: h - bottomPadding - profileSize / 2)
+                }
                 
                 // 用户名和时间
                 let textLeftOffset: CGFloat = sidePadding + profileSize + 10
@@ -751,117 +864,452 @@ struct ResponseCard: View {
         }
     }
     
-    // 卡片背面视图（评论）
     private var cardBackView: some View {
         ZStack {
             cardBackground
+                .scaleEffect(1.25)
             
             VStack {
                 ScrollView {
+                    // 先筛出顶层评论(parentCommentId为空)
+                    let topLevelComments = comments.filter { $0.parentCommentId?.isEmpty ?? true }
+                    
                     VStack(spacing: 10) {
-                        ForEach(comments) { comment in
-                            HStack(alignment: .top, spacing: 10) {
-                                if comment.uid != getCurrentUser().uid {
-                                    NavigationLink(destination: ProfileView(
-                                        chatUser: ChatUser(data: [
-                                            "uid": comment.uid, // 插个眼
-                                            "userName": comment.userName,
-                                            "profileImageUrl": comment.profileImageUrl
-                                        ]),
-                                        currentUser: getCurrentUser(),
-                                        isCurrentUser: false)) {
-                                            WebImage(url: URL(string: comment.profileImageUrl))
+                        ForEach(topLevelComments) { topComment in
+                            VStack(alignment: .leading, spacing: 3) {
+                                // 顶层评论UI
+                                HStack(alignment: .top, spacing: 5) {
+                                    if topComment.uid != getCurrentUser().uid {
+                                        NavigationLink(
+                                            destination: ProfileView(
+                                                chatUser: ChatUser(data: [
+                                                    "uid": topComment.uid,
+                                                    "userName": topComment.userName,
+                                                    "profileImageUrl": topComment.profileImageUrl
+                                                ]),
+                                                currentUser: getCurrentUser(),
+                                                isCurrentUser: false)
+                                        ) {
+                                            WebImage(url: URL(string: topComment.profileImageUrl))
                                                 .resizable()
                                                 .scaledToFill()
                                                 .frame(width: 32, height: 32)
                                                 .clipShape(Circle())
                                         }
+                                    } else {
+                                        WebImage(url: URL(string: topComment.profileImageUrl))
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
+                                    }
+                                    
+                      
+                                    HStack {
+                                        if cardColor == .mint {
+                                            VStack(alignment: .leading) {
+                                                HStack {
+                                                    Text(topComment.userName)
+                                                        .font(.subheadline)
+                                                        .fontWeight(.bold)
+                                                        .foregroundColor(Color(red: 0.357, green: 0.635, blue: 0.451))
+                                                }
+                                                HStack {
+                                                    if let replyTarget = topComment.replyTarget, !replyTarget.isEmpty {
+                                                        Text("(To: \(replyTarget)) \(topComment.content)")
+                                                            .font(.subheadline)
+                                                            .fontWeight(.medium)
+                                                            .foregroundColor(.gray)
+                                                            .multilineTextAlignment(.leading)
+                                                    } else {
+                                                        Text(topComment.content)
+                                                            .font(.subheadline)
+                                                            .fontWeight(.medium)
+                                                            .foregroundColor(.gray)
+                                                            .multilineTextAlignment(.leading)
+                                                    }
+                                                }
+                                            }
+                                            .onTapGesture {
+                                                replyComment = topComment
+                                                showInputField = true
+                                                isFocused = true
+                                            }
+                                            .onLongPressGesture {
+                                                if topComment.uid == getCurrentUser().uid {
+                                                    commentToDelete = topComment
+                                                    showDeleteAlert = true
+                                                }
+                                            }
+                                        } else if cardColor == .cyan {
+                                            VStack(alignment: .leading) {
+                                                HStack {
+                                                    Text(topComment.userName)
+                                                        .font(.subheadline)
+                                                        .fontWeight(.bold)
+                                                        .foregroundColor(Color(red: 0.388, green: 0.655, blue: 0.835))
+                                                }
+                                                HStack {
+                                                    if let replyTarget = topComment.replyTarget, !replyTarget.isEmpty {
+                                                        Text("(To: \(replyTarget)) \(topComment.content)")
+                                                            .font(.subheadline)
+                                                            .fontWeight(.medium)
+                                                            .foregroundColor(.gray)
+                                                            .multilineTextAlignment(.leading)
+                                                    } else {
+                                                        Text(topComment.content)
+                                                            .font(.subheadline)
+                                                            .fontWeight(.medium)
+                                                            .foregroundColor(.gray)
+                                                            .multilineTextAlignment(.leading)
+                                                    }
+                                                }
+                                            }
+                                            .onTapGesture {
+                                                replyComment = topComment
+                                                showInputField = true
+                                                isFocused = true
+                                            }
+                                            .onLongPressGesture {
+                                                if topComment.uid == getCurrentUser().uid {
+                                                    commentToDelete = topComment
+                                                    showDeleteAlert = true
+                                                }
+                                            }
+                                        } else {
+                                            VStack(alignment: .leading) {
+                                                HStack {
+                                                    Text(topComment.userName)
+                                                        .font(.subheadline)
+                                                        .fontWeight(.bold)
+                                                        .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                                }
+                                                HStack {
+                                                    if let replyTarget = topComment.replyTarget, !replyTarget.isEmpty {
+                                                        Text("(To: \(replyTarget)) \(topComment.content)")
+                                                            .font(.subheadline)
+                                                            .fontWeight(.medium)
+                                                            .foregroundColor(.gray)
+                                                            .multilineTextAlignment(.leading)
+                                                    } else {
+                                                        Text(topComment.content)
+                                                            .font(.subheadline)
+                                                            .fontWeight(.medium)
+                                                            .foregroundColor(.gray)
+                                                            .multilineTextAlignment(.leading)
+                                                    }
+                                                }
+                                            }
+                                            .onTapGesture {
+                                                replyComment = topComment
+                                                showInputField = true
+                                                isFocused = true
+                                            }
+                                            .onLongPressGesture {
+                                                if topComment.uid == getCurrentUser().uid {
+                                                    commentToDelete = topComment
+                                                    showDeleteAlert = true
+                                                }
+                                            }
+                                        }
+                                        Spacer()
+                                        Text(topComment.timestamp, style: .time)
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                            .padding(.top, 2.5)
+                                    }
+                                    
                                 }
-                                else{
-                                    WebImage(url: URL(string: comment.profileImageUrl))
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 32, height: 32)
-                                        .clipShape(Circle())
+                                // .padding(.horizontal, 1)
+                                
+                                // 子评论(只一层)
+                                let subComments = comments
+                                    .filter { $0.rootCommentId == topComment.docId && $0.docId != topComment.docId } // 防止自己的评论成为子评论
+                                    .sorted { $0.timestamp < $1.timestamp }
+
+                                if expandedComments.contains(topComment.docId) || subComments.count <= 2 {
+                                    ForEach(subComments) { subComment in
+                                        HStack(alignment: .top, spacing: 10) {
+                                        // 缩进
+                                        Spacer().frame(width: 20)
+                                        
+                                        if subComment.uid != getCurrentUser().uid {
+                                            NavigationLink(
+                                                destination: ProfileView(
+                                                    chatUser: ChatUser(data: [
+                                                        "uid": subComment.uid,
+                                                        "userName": subComment.userName,
+                                                        "profileImageUrl": subComment.profileImageUrl
+                                                    ]),
+                                                    currentUser: getCurrentUser(),
+                                                    isCurrentUser: false
+                                                )
+                                            ) {
+                                                WebImage(url: URL(string: subComment.profileImageUrl))
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 32, height: 32)
+                                                    .clipShape(Circle())
+                                            }
+                                        } else {
+                                            WebImage(url: URL(string: subComment.profileImageUrl))
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 32, height: 32)
+                                                .clipShape(Circle())
+                                        }
+                                        
+
+                                        HStack {
+                                            if cardColor == .mint {
+                                                VStack(alignment: .leading) {
+                                                    HStack {
+                                                        Text(subComment.userName)
+                                                            .font(.subheadline)
+                                                            .fontWeight(.bold)
+                                                            .foregroundColor(Color(red: 0.357, green: 0.635, blue: 0.451))
+                                                    }
+                                                    HStack {
+                                                        if let replyTarget = subComment.replyTarget, !replyTarget.isEmpty {
+                                                            Text("(To: \(replyTarget)) \(subComment.content)")
+                                                                .font(.subheadline)
+                                                                .fontWeight(.medium)
+                                                                .foregroundColor(.gray)
+                                                                .multilineTextAlignment(.leading)
+                                                        } else {
+                                                            Text(subComment.content)
+                                                                .font(.subheadline)
+                                                                .fontWeight(.medium)
+                                                                .foregroundColor(.gray)
+                                                                .multilineTextAlignment(.leading)
+                                                        }
+                                                    }
+                                                }
+                                                .onTapGesture {
+                                                    replyComment = subComment
+                                                    showInputField = true
+                                                    isFocused = true
+                                                }
+                                                .onLongPressGesture {
+                                                    if subComment.uid == getCurrentUser().uid {
+                                                        commentToDelete = subComment
+                                                        showDeleteAlert = true
+                                                    }
+                                                }
+                                            } else if cardColor == .cyan {
+                                                VStack(alignment: .leading) {
+                                                    HStack {
+                                                        Text(subComment.userName)
+                                                            .font(.subheadline)
+                                                            .fontWeight(.bold)
+                                                            .foregroundColor(Color(red: 0.388, green: 0.655, blue: 0.835))
+                                                    }
+                                                    HStack {
+                                                        if let replyTarget = subComment.replyTarget, !replyTarget.isEmpty {
+                                                            Text("(To: \(replyTarget)) \(subComment.content)")
+                                                                .font(.subheadline)
+                                                                .fontWeight(.medium)
+                                                                .foregroundColor(.gray)
+                                                                .multilineTextAlignment(.leading)
+                                                        } else {
+                                                            Text(subComment.content)
+                                                                .font(.subheadline)
+                                                                .fontWeight(.medium)
+                                                                .foregroundColor(.gray)
+                                                                .multilineTextAlignment(.leading)
+                                                        }
+                                                    }
+                                                }
+                                                .onTapGesture {
+                                                    replyComment = subComment
+                                                    showInputField = true
+                                                    isFocused = true
+                                                }
+                                                .onLongPressGesture {
+                                                    if subComment.uid == getCurrentUser().uid {
+                                                        commentToDelete = subComment
+                                                        showDeleteAlert = true
+                                                    }
+                                                }
+                                            } else {
+                                                VStack(alignment: .leading) {
+                                                    HStack {
+                                                        Text(subComment.userName)
+                                                            .font(.subheadline)
+                                                            .fontWeight(.bold)
+                                                            .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                                    }
+                                                    HStack {
+                                                        if let replyTarget = subComment.replyTarget, !replyTarget.isEmpty {
+                                                            Text("(To: \(replyTarget)) \(subComment.content)")
+                                                                .font(.subheadline)
+                                                                .fontWeight(.medium)
+                                                                .foregroundColor(.gray)
+                                                                .multilineTextAlignment(.leading)
+                                                        } else {
+                                                            Text(subComment.content)
+                                                                .font(.subheadline)
+                                                                .fontWeight(.medium)
+                                                                .foregroundColor(.gray)
+                                                                .multilineTextAlignment(.leading)
+                                                        }
+                                                    }
+                                                }
+                                                .onTapGesture {
+                                                    replyComment = subComment
+                                                    showInputField = true
+                                                    isFocused = true
+                                                }
+                                                .onLongPressGesture {
+                                                    if subComment.uid == getCurrentUser().uid {
+                                                        commentToDelete = subComment
+                                                        showDeleteAlert = true
+                                                    }
+                                                }
+                                            }
+                                            Spacer()
+                                            Text(subComment.timestamp, style: .time)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                                .padding(.top, 2.5)
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                    }
+
+                                } else {
+                                    ForEach(subComments.prefix(2)) { subComment in
+                                        HStack(alignment: .top, spacing: 10) {
+                                            // ...existing 子评论UI...
+                                        }
+                                        .padding(.horizontal)
+                                    }
                                 }
-                                if cardColor == .mint{
-                                    VStack(alignment: .leading) {
-                                        Text(comment.userName)
-                                            .font(.subheadline)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(Color(red: 0.357, green: 0.635, blue: 0.451))
-                                        Text(comment.content)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
+
+                                if subComments.count > 2 {
+                                // 在顶层评论区域添加切换按钮（示例）：
+                                    Button(action: {
+                                        if expandedComments.contains(topComment.docId) {
+                                            expandedComments.remove(topComment.docId)
+                                        } else {
+                                            expandedComments.insert(topComment.docId)
+                                        }
+                                    }) {
+                                        Text(expandedComments.contains(topComment.docId) ? "—— fold" : "—— expand \(subComments.count) \(subComments.count > 1 ? "replies" : "reply")")
+                                            .font(.caption)
                                             .foregroundColor(.gray)
                                     }
-                                } else if cardColor == .cyan{
-                                    VStack(alignment: .leading) {
-                                        Text(comment.userName)
-                                            .font(.subheadline)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(Color(red: 0.388, green: 0.655, blue: 0.835))
-                                        Text(comment.content)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.gray)
-                                    }
-                                }else{
-                                    VStack(alignment: .leading) {
-                                        Text(comment.userName)
-                                            .font(.subheadline)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                        Text(comment.content)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.gray)
-                                    }
+                                    .padding(.leading, 20)
                                 }
-                                Spacer()
-                                Text(comment.timestamp, style: .time)
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                    .padding(.top, 2.5)
                             }
-                            .padding(.horizontal)
                         }
                     }
                 }
-                .padding(.top, 70)
+                .padding(.top, 35)
                 
-                // 评论输入框和发送按钮固定在底部
-                HStack {
-                    TextField("Add a comment...", text: $newCommentText)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding(.leading, 8)
-                        .cornerRadius(25)
-                        .keyboardAdaptive()
-                    
-                    Button(action: {
-                        submitNewComment()
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
-                                                        to: nil,
-                                                        from: nil,
-                                                        for: nil)
-                    }) {
-                        if cardColor == .mint {
-                            Image(systemName: "paperplane.fill")
-                                .foregroundColor(Color(red: 0.357, green: 0.635, blue: 0.451))
-                        } else if cardColor == .cyan {
-                            Image(systemName: "paperplane.fill")
-                                .foregroundColor(Color(red: 0.388, green: 0.655, blue: 0.835))
-                        } else if cardColor == .pink {
-                            Image(systemName: "paperplane.fill")
-                                .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                Spacer()
+                
+                if showInputField {
+                    HStack {
+                        // 向下按钮，用于隐藏输入框
+                        Button(action: {
+                            showInputField = false
+                            isFocused = false
+                        }) {
+                            Image(systemName: "chevron.down")
+                                .foregroundColor(getButtonColor())
                         }
+                        .padding(.leading)
+
+                        TextField(replyComment == nil ? "Add a comment..." : "Reply to \(replyComment!.userName)...", text: $newCommentText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            // .padding(.horizontal)
+                            .focused($isFocused)
+                            .onAppear {
+                                isFocused = true // 聚焦输入框
+                            }
+                            .cornerRadius(20)
+
+
+                        if !newCommentText.isEmpty {
+                            Button(action: {
+                                submitNewComment()
+                                isFocused = false
+                                showInputField = false // 隐藏输入框
+                            }) {
+
+                                Image(systemName: "paperplane.fill")
+                                    .foregroundColor(getButtonColor())
+                            }
+                            .padding(.trailing)
+                        } else {
+                            Button(action: {
+                                print("Say somthing before sending ~") // 插个眼
+                            }) {
+
+                                Image(systemName: "paperplane.fill")
+                                    .foregroundColor(Color.gray)
+                            }
+                            .padding(.trailing)
+                        }
+
+                        
                     }
-                    .padding(.trailing, 8)
+                    .background(Color.white.opacity(0.5))
+                    .overlay(
+                            Capsule() // 使用 Capsule 形状
+                                .stroke(getButtonColor().opacity(0.5), lineWidth: 3)
+                                .shadow(color: Color.black.opacity(0.2), radius: 6, x: 0, y: 3) // 添加阴影 // 添加边框
+                        )
+                    .cornerRadius(15)
+                    .padding(.bottom, 100)
+                    .animation(.easeOut(duration: 0.25), value: 100)
+                } else {
+                    Button(action: {
+                        replyComment = nil // 清除回复目标
+                        showInputField = true // 显示输入框
+                        isFocused = true // 聚焦输入框
+                    }) {
+                        HStack {
+                            Image(systemName: "pencil.and.outline") // 使用系统图标
+                                .foregroundColor(.white)
+                            
+                            Text("Add a comment...")
+                                .foregroundColor(.white)
+                                .padding(.leading, 5) // 添加一些间距
+                        }
+                        .padding()
+                        .background(
+                            Capsule() // 使用 Capsule 形状
+                                .fill(
+                                    LinearGradient(gradient: Gradient(colors: [getButtonColor(), getButtonColor().opacity(0.7)]), startPoint: .leading, endPoint: .trailing)
+                                )
+                                .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3) // 添加阴影
+                        )
+                        .overlay(
+                            Capsule() // 使用 Capsule 形状
+                                .stroke(Color.white.opacity(0.5), lineWidth: 1) // 添加边框
+                        )
+                    }
+                    .padding(.horizontal)
                 }
-                .padding()
+ 
             }
         }
     }
+
+    private func getButtonColor() -> Color {
+            switch cardColor {
+            case .mint:
+                return Color(red: 0.357, green: 0.635, blue: 0.451)
+            case .cyan:
+                return Color(red: 0.388, green: 0.655, blue: 0.835)
+            case .pink:
+                return Color(red: 0.49, green: 0.52, blue: 0.75)
+            default:
+                return .blue
+            }
+        }
 
         // 为正反面提供相同的卡片背景
     private var cardBackground: some View {
@@ -906,14 +1354,21 @@ struct ResponseCard: View {
 
             let userName = data["username"] as? String ?? "Unknown"
             let profileImageUrl = data["profileImageUrl"] as? String ?? ""
+            let rootId = replyComment?.rootCommentId ?? commentRef.documentID // 若无上级，则自己是根
             
             let commentData: [String: Any] = [
+                "docId": commentRef.documentID,
                 "uid": userId,
                 "userName": userName,
                 "profileImageUrl": profileImageUrl,
                 "content": newCommentText,
-                "timestamp": FieldValue.serverTimestamp() // 添加时间戳字段
+                "timestamp": FieldValue.serverTimestamp(), // 添加时间戳字段
+                "replyTarget": replyComment?.userName ?? "", // 如果存在被回复的comment，存它的userName
+                "parentCommentId": replyComment?.docId ?? "", // 使用父评论的文档ID
+                "rootCommentId": rootId // 新增，存根评论的文档ID
             ]
+
+            newCommentText = ""
         
             commentRef.setData(commentData) { error in
                 if let error = error {
@@ -952,11 +1407,15 @@ struct ResponseCard: View {
                     self.comments = docs.map { doc in
                         let data = doc.data()
                         return Comment(
+                            docId: doc.documentID,
                             uid: data["uid"] as? String ?? "Unknown",
                             userName: data["userName"] as? String ?? "Unknown",
                             profileImageUrl: data["profileImageUrl"] as? String ?? "",
                             content: data["content"] as? String ?? "",
-                            timestamp: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date() // 获取时间戳
+                            timestamp: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date(), // 获取时间戳
+                            replyTarget: data["replyTarget"] as? String ?? "", // 获取被回复的comment的userName
+                            parentCommentId: data["parentCommentId"] as? String ?? "",
+                            rootCommentId: data["rootCommentId"] as? String ?? ""
                         )
                     }
                 }
@@ -982,14 +1441,35 @@ struct ResponseCard: View {
                 }
             }
     }
+    
+    private func deleteComment(comment: Comment) {
+        guard let currentUser = FirebaseManager.shared.auth.currentUser else { return }
+        let commentRef = FirebaseManager.shared.firestore
+            .collection("response_to_prompt")
+            .document(response.documentId) // 使用 response.documentId 而不是 comment.rootCommentId
+            .collection("comments")
+            .document(comment.docId)
+
+        print("Deleting comment with ID: \(comment.docId) in response \(response.documentId)")
+
+        commentRef.delete { error in
+            if let error = error {
+                print("Failed to delete comment:", error.localizedDescription)
+                return
+            }
+            DispatchQueue.main.async {
+                self.fetchComments()
+            }
+        }
+    }
 }
+
 
 
 struct FullScreenResponseInputView: View {
     @StateObject var vm: FriendGroupViewModel
     let selectedUser: ChatUser
     
-    @State private var keyboardHeight: CGFloat = 0 // Track keyboard height
     @FocusState private var isResponseTextFocused: Bool // For focusing the TextEditor
     
     var body: some View {
@@ -1100,51 +1580,9 @@ struct FullScreenResponseInputView: View {
                         .padding(.bottom, 16)
                         Spacer()
                     }
-                    .animation(.easeOut(duration: 0.25), value: keyboardHeight)
-                }
-                .onAppear {
-                    // Observe keyboard events
-                    NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { notification in
-                        if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                            self.keyboardHeight = keyboardFrame.height
-                        }
-                    }
-                    NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { _ in
-                        self.keyboardHeight = 0
-                    }
-                }
-                .onDisappear {
-                    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
-                    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
                 }
                 .ignoresSafeArea(.keyboard)
             }
         }
-    }
-}
-
-extension View {
-    func keyboardAdaptive() -> some View {
-        self.modifier(KeyboardAdaptive())
-    }
-}
-
-struct KeyboardAdaptive: ViewModifier {
-    @State private var keyboardHeight: CGFloat = 0
-
-    func body(content: Content) -> some View {
-        content
-            .padding(.bottom, keyboardHeight)
-            .onAppear {
-                NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { notification in
-                    if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                        keyboardHeight = keyboardFrame.height
-                    }
-                }
-                
-                NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { _ in
-                    keyboardHeight = 0
-                }
-            }
     }
 }

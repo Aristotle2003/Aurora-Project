@@ -411,7 +411,3 @@ struct CustomNavBar: View {
         }
     }
 }
-
-#Preview{
-    CustomTabNavigationView()
-}

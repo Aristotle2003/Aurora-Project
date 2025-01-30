@@ -4,6 +4,7 @@ import TOCropViewController
 struct ImagePicker: UIViewControllerRepresentable {
     
     @Binding var image: UIImage?
+    var sourceType: UIImagePickerController.SourceType = .photoLibrary
     @Environment(\.presentationMode) var presentationMode // To dismiss the SwiftUI modal
     
     private let controller = UIImagePickerController()
@@ -56,7 +57,7 @@ struct ImagePicker: UIViewControllerRepresentable {
     
     func makeUIViewController(context: Context) -> some UIViewController {
         controller.delegate = context.coordinator
-        controller.sourceType = .photoLibrary
+        controller.sourceType = sourceType
         return controller
     }
     

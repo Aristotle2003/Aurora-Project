@@ -194,41 +194,100 @@ struct ProfileView: View {
             self.showTemporaryImage = false
         }
         .sheet(isPresented: $showReportSheet) {
-            VStack(spacing: 20) {
-                Text("Report User")
-                    .font(.headline)
+            ZStack {
+                Color(red: 0.976, green: 0.980, blue: 1.0)
+                    .ignoresSafeArea()
                 
-                TextField("Enter your report reason", text: $reportContent)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                
-                HStack {
-                    Button(action: {
-                        // 关闭报告视图
-                        showReportSheet = false
-                        generateHapticFeedbackMedium()
-                    }) {
-                        Text("Cancel")
-                            .padding()
-                            .background(Color.gray.opacity(0.3))
-                            .cornerRadius(8)
+                VStack(spacing: 0) {
+                    // Header
+                    ZStack {
+                        Color.white
+                            .shadow(color: Color.black.opacity(0.05), radius: 2, y: 2)
+                        
+                        Text("Report User")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
                     }
+                    .frame(height: 60)
                     
-                    Button(action: {
-                        // 提交报告
-                        reportFriend()
-                        showReportSheet = false
-                        generateHapticFeedbackMedium()
-                    }) {
-                        Text("Submit")
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+                    // Content
+                    VStack(spacing: 24) {
+                        // Report Input Field
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Please describe your concern")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                .padding(.leading, 4)
+                            
+                            TextEditor(text: $reportContent)
+                                .frame(height: 120)
+                                .padding(12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white)
+                                        .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                        
+                        // Notice Text
+                        Text("Your report will be reviewed by our team. We take all reports seriously and will take appropriate action.")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        // Buttons
+                        HStack(spacing: 16) {
+                            // Cancel Button
+                            Button(action: {
+                                showReportSheet = false
+                                generateHapticFeedbackMedium()
+                            }) {
+                                Text("Cancel")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.white)
+                                            .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.2), lineWidth: 1)
+                                    )
+                            }
+                            
+                            // Submit Button
+                            Button(action: {
+                                reportFriend()
+                                showReportSheet = false
+                                generateHapticFeedbackMedium()
+                            }) {
+                                Text("Submit Report")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                            .shadow(color: Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.3), radius: 4, y: 2)
+                                    )
+                            }
+                        }
                     }
+                    .padding(24)
+                    
+                    Spacer()
                 }
             }
-            .padding()
+            .presentationDetents([.height(400)])
         }
         .sheet(isPresented: $showImagePicker) {
             ImagePicker(image: $selectedImage)
@@ -270,6 +329,7 @@ struct ProfileView: View {
                     chatLogViewModel.markLatestMessageAsSeen()
                     chatLogViewModel.startListeningForActiveStatus()
                     chatLogViewModel.startListeningForSavingTrigger()
+                    chatLogViewModel.startListeningForImages()
                     chatLogViewModel.fetchLatestMessages()
                 }
                 .onDisappear{

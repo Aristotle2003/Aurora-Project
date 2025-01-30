@@ -3,6 +3,7 @@ import SDWebImageSwiftUI
 import Firebase
 import FirebaseFirestore
 import FirebaseAuth
+import FirebaseStorage
 import Lottie
 
 struct FirebaseConstants {
@@ -44,8 +45,163 @@ class ChatLogViewModel: ObservableObject {
     @Published var isChatUserActive: Bool = false
     @Published var chatUserLastSeen: Timestamp? = nil
     @Published var savingTrigger: Bool = true
+    @Published var showImagePicker = false
+    @Published var selectedImage: UIImage?
+    @Published var receivedImages: [String] = []
+    @Published var hasUnseenImages = false
+    private var imageListener: ListenerRegistration?
     private var listener: ListenerRegistration?
     private var listenerForSavingTrigger: ListenerRegistration?
+    
+    
+    @Published var statusMessage = ""
+    
+    // Update the handleImageSelection function in ChatLogViewModel
+    func handleImageSelection(image: UIImage) {
+        guard let fromId = FirebaseManager.shared.auth.currentUser?.uid,
+              let toId = chatUser?.uid else { return }
+        
+        let imageName = UUID().uuidString
+        // Use a more specific storage path
+        let ref = FirebaseManager.shared.storage.reference().child("chat_images").child(fromId).child(toId).child("\(imageName).jpg")
+        
+        // Convert image to lower quality JPEG and process in background
+        DispatchQueue.global(qos: .userInitiated).async {
+            // First convert to PNG to handle any HDR image issues
+            if let pngData = image.pngData(),
+               let normalizedImage = UIImage(data: pngData),
+               let compressedData = normalizedImage.jpegData(compressionQuality: 0.3) {
+                
+                // Switch back to main thread for UI updates
+                DispatchQueue.main.async {
+                    // Upload the compressed image data
+                    let metadata = StorageMetadata()
+                    metadata.contentType = "image/jpeg"
+                    
+                    // Upload with metadata
+                    ref.putData(compressedData, metadata: metadata) { [weak self] metadata, err in
+                        guard let self = self else { return }
+                        
+                        if let err = err {
+                            print("Failed to upload image: \(err)")
+                            self.statusMessage = "Failed to upload image: \(err.localizedDescription)"
+                            return
+                        }
+                        
+                        ref.downloadURL { url, err in
+                            if let err = err {
+                                print("Failed to get download URL: \(err)")
+                                self.statusMessage = "Failed to process image: \(err.localizedDescription)"
+                                return
+                            }
+                            
+                            guard let url = url else {
+                                print("Failed to get URL")
+                                return
+                            }
+                            print("Successfully uploaded image, URL: \(url.absoluteString)")
+                            self.storeImageUrlInFirestore(imageUrl: url)
+                        }
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    print("Failed to process image data")
+                    self.statusMessage = "Failed to process image"
+                }
+            }
+        }
+    }
+
+    private func storeImageUrlInFirestore(imageUrl: URL) {
+        guard let fromId = FirebaseManager.shared.auth.currentUser?.uid,
+              let toId = chatUser?.uid else { return }
+        
+        let docRef = FirebaseManager.shared.firestore
+            .collection("Images_in_message")
+            .document(toId)
+            .collection("image_list")
+            .document(fromId)
+        
+        // First try to fetch existing document
+        docRef.getDocument { [weak self] snapshot, err in
+            guard let self = self else { return }
+            
+            if let err = err {
+                print("Failed to fetch document: \(err)")
+                self.statusMessage = "Failed to fetch document: \(err.localizedDescription)"
+                return
+            }
+            
+            // Get existing images array or create new one
+            var imageUrls = (snapshot?.data()?["images"] as? [String]) ?? []
+            imageUrls.append(imageUrl.absoluteString)
+            
+            // Update or create document
+            docRef.setData(["images": imageUrls], merge: true) { err in
+                if let err = err {
+                    print("Failed to save image URL: \(err)")
+                    self.statusMessage = "Failed to save image URL: \(err.localizedDescription)"
+                    return
+                }
+                print("Successfully stored image URL in Firestore")
+                self.statusMessage = "Successfully stored image"
+            }
+        }
+    }
+    
+    func startListeningForImages() {
+        guard let currentUserId = FirebaseManager.shared.auth.currentUser?.uid,
+              let chatUserId = chatUser?.uid else { return }
+        
+        let docRef = FirebaseManager.shared.firestore
+            .collection("Images_in_message")
+            .document(currentUserId)
+            .collection("image_list")
+            .document(chatUserId)
+        
+        imageListener = docRef.addSnapshotListener { snapshot, error in
+            if let error = error {
+                self.statusMessage = "Failed to listen for images: \(error.localizedDescription)"
+                return
+            }
+            
+            if let imageUrls = snapshot?.data()?["images"] as? [String] {
+                self.receivedImages = imageUrls
+                self.hasUnseenImages = !imageUrls.isEmpty
+            } else {
+                self.receivedImages = []
+                self.hasUnseenImages = false
+            }
+        }
+    }
+    
+    func deleteImage(at index: Int) {
+        guard let currentUserId = FirebaseManager.shared.auth.currentUser?.uid,
+              let chatUserId = chatUser?.uid,
+              index < receivedImages.count else { return }
+        
+        var updatedImages = receivedImages
+        updatedImages.remove(at: index)
+        
+        let docRef = FirebaseManager.shared.firestore
+            .collection("Images_in_message")
+            .document(currentUserId)
+            .collection("image_list")
+            .document(chatUserId)
+        
+        docRef.setData(["images": updatedImages]) { err in
+            if let err = err {
+                self.statusMessage = "Failed to update images: \(err.localizedDescription)"
+                return
+            }
+        }
+    }
+    
+    func stopListeningForImages() {
+        imageListener?.remove()
+        imageListener = nil
+    }
     
     var timer: Timer?
     var seenCheckTimer: Timer?
@@ -59,13 +215,16 @@ class ChatLogViewModel: ObservableObject {
         stopListening()
         stopListeningForActiveStatus()
         stopListeningForSavingTrigger()
+        stopListeningForImages()
         stopAutoSend()
-        
+        self.showImagePicker = false
+        self.receivedImages = []
         // Reset all properties
         self.chatText = ""
         self.errorMessage = ""
         self.latestSenderMessage = nil
         self.latestRecipientMessage = nil
+        self.hasUnseenImages = false
         self.chatUser = chatUser
         self.showSavedMessagesWindow = false
         self.savedMessages = []
@@ -79,6 +238,7 @@ class ChatLogViewModel: ObservableObject {
             initializeMessages()
             startListeningForActiveStatus()
             startListeningForSavingTrigger()
+            startListeningForImages()
             fetchLatestMessages()
         }
     }
@@ -127,7 +287,7 @@ class ChatLogViewModel: ObservableObject {
             
         }
     }
-
+    
     func stopListeningForSavingTrigger() {
         listenerForSavingTrigger?.remove()
         listenerForSavingTrigger = nil
@@ -381,25 +541,6 @@ class ChatLogViewModel: ObservableObject {
         senderMessageListener?.remove()
         recipientMessageListener?.remove()
         
-//        // Listener for latest message sent by the current user
-//        senderMessageListener = FirebaseManager.shared.firestore
-//            .collection("messages")
-//            .document(fromId)
-//            .collection(toId)
-//            .order(by: "timeStamp", descending: true)
-//            .limit(to: 1)
-//            .addSnapshotListener { querySnapshot, error in
-//                if let error = error {
-//                    self.errorMessage = "Failed to listen for sender's latest message: \(error)"
-//                    return
-//                }
-//                if let document = querySnapshot?.documents.first {
-//                    let data = document.data()
-//                    self.latestSenderMessage = ChatMessage(documentId: document.documentID, data: data)
-//                }
-//            }
-        
-        // Listener for latest message sent by the recipient
         recipientMessageListener = FirebaseManager.shared.firestore
             .collection("messages")
             .document(toId)
@@ -462,27 +603,27 @@ class ChatLogViewModel: ObservableObject {
             self.lastState = isRecipientActiveToMe
             
             let messageRef = FirebaseManager.shared.firestore
-                        .collection("messages")
-                        .document(fromId)
-                        .collection(toId)
-                        .document() // Generate a new document ID
-
-                    messageRef.setData(messageData) { error in
-                        if let error = error {
-                            self.errorMessage = "Failed to send message: \(error)"
-                            return
-                        }
-
-                        // Update the latest sender message
-                        self.latestSenderMessage = ChatMessage(
-                            documentId: messageRef.documentID,
-                            data: messageData
-                        )
-
-                        // Update friend list timestamps
-                        self.updateFriendLatestMessageTimestampForRecipient(friendId: toId)
-                        self.updateFriendLatestMessageTimestampForSelf(friendId: toId)
-                    }
+                .collection("messages")
+                .document(fromId)
+                .collection(toId)
+                .document() // Generate a new document ID
+            
+            messageRef.setData(messageData) { error in
+                if let error = error {
+                    self.errorMessage = "Failed to send message: \(error)"
+                    return
+                }
+                
+                // Update the latest sender message
+                self.latestSenderMessage = ChatMessage(
+                    documentId: messageRef.documentID,
+                    data: messageData
+                )
+                
+                // Update friend list timestamps
+                self.updateFriendLatestMessageTimestampForRecipient(friendId: toId)
+                self.updateFriendLatestMessageTimestampForSelf(friendId: toId)
+            }
         }
     }
     
@@ -594,6 +735,7 @@ class ChatLogViewModel: ObservableObject {
         stopListening()
         stopListeningForActiveStatus()
         stopListeningForSavingTrigger()
+        stopListeningForImages()
     }
     
 }
@@ -605,6 +747,9 @@ struct ChatLogView: View {
     @State private var isAppInBackground = false
     @Environment(\.presentationMode) var presentationMode
     @State private var currentTime = Date()
+    @State private var showImageViewer = false
+    @State private var currentImageIndex = 0
+    @State private var showCameraPicker = false
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -781,7 +926,31 @@ struct ChatLogView: View {
                                     
                                     // HStack for Save Button
                                     HStack {
+                                        if vm.hasUnseenImages {
+                                            Button(action: {
+                                                showImageViewer = true
+                                                currentImageIndex = 0
+                                            }) {
+                                                Image(systemName: "photo.stack")
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .frame(width: 24, height: 24)
+                                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                                    .padding(.leading, 30)
+                                            }
+                                            .sheet(isPresented: $showImageViewer) {
+                                                ImageViewerView(images: vm.receivedImages, currentIndex: $currentImageIndex) { index in
+                                                    vm.deleteImage(at: index)
+                                                    if vm.receivedImages.isEmpty {
+                                                        showImageViewer = false
+                                                    }
+                                                }
+                                            }
+                                        }
                                         Spacer()
+                                        // Camera button
+                                        
+                                        
                                         if let recipientMessage = vm.latestRecipientMessage, !recipientMessage.text.isEmpty {
                                             Button(action: {
                                                 vm.saveMessage(sender: vm.chatUser?.username ?? "", messageText: recipientMessage.text, timestamp: recipientMessage.timeStamp)
@@ -909,7 +1078,7 @@ struct ChatLogView: View {
                                                 .font(Font.system(size: 18))
                                                 .padding(.horizontal, 4)
                                         }
-
+                                        
                                     }
                                     .frame(height: 60)
                                     .padding(.top, 5)
@@ -926,6 +1095,49 @@ struct ChatLogView: View {
                                     Spacer() // Push buttons to the bottom
                                     HStack(spacing: 16) { // 20-point spacing between buttons
                                         Spacer()
+
+                                        // 直接拍照
+                                        Button(action: {
+                                            showCameraPicker = true
+                                            generateHapticFeedbackMedium()
+                                        }) {
+                                            Image(systemName: "camera.fill")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 24, height: 24)
+                                                .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                        }
+                                        .sheet(isPresented: $showCameraPicker) {
+                                            ImagePicker(image: $vm.selectedImage, sourceType: .camera)
+                                                .onChange(of: vm.selectedImage) { newImage in
+                                                    if let image = newImage {
+                                                        vm.handleImageSelection(image: image)
+                                                        vm.selectedImage = nil
+                                                    }
+                                                }
+                                        }
+
+                                        // Camera button
+                                        Button(action: {
+                                            vm.showImagePicker = true
+                                            generateHapticFeedbackMedium()
+                                        }) {
+                                            Image(systemName: "photo.fill")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 24, height: 24)
+                                                .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                        }
+                                        // Add these modifiers to your view
+                                        .sheet(isPresented: $vm.showImagePicker) {
+                                            ImagePicker(image: $vm.selectedImage)
+                                                .onChange(of: vm.selectedImage) { newImage in
+                                                    if let image = newImage {
+                                                        vm.handleImageSelection(image: image)
+                                                        vm.selectedImage = nil
+                                                    }
+                                                }
+                                        }
                                         if !vm.chatText.isEmpty {
                                             Button(action: {
                                                 vm.saveMessageForSelf(sender: "Me", messageText: vm.chatText, timestamp: Timestamp())
@@ -983,6 +1195,7 @@ struct ChatLogView: View {
             vm.startListeningForActiveStatus()
             vm.startListeningForSavingTrigger()
             vm.fetchLatestMessages()
+            vm.startListeningForImages()
             Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
                 currentTime = Date()
             }
@@ -995,6 +1208,7 @@ struct ChatLogView: View {
             vm.stopListeningForActiveStatus()
             vm.stopListeningForSavingTrigger()
             vm.stopListening()
+            vm.stopListeningForImages()
         }
         .gesture(
             DragGesture(minimumDistance: 10, coordinateSpace: .local)
@@ -1064,7 +1278,7 @@ struct ChatLogView: View {
         let minutes = seconds / 60
         let hours = minutes / 60
         let days = hours / 24
-
+        
         if days > 0 {
             return "\(days) day\(days > 1 ? "s" : "")"
         } else if hours > 0 {
@@ -1077,159 +1291,7 @@ struct ChatLogView: View {
             return "just"
         }
     }
-
     
-    
-    private var messagesView: some View {
-        VStack {
-            if let chatUser = vm.chatUser {
-                NavigationLink(destination: ProfileView(
-                    chatUser: chatUser,
-                    currentUser: getCurrentUser(),
-                    isCurrentUser: false
-                )) {
-                    WebImage(url: URL(string: vm.chatUser?.profileImageUrl ?? ""))
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 50, height: 50)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Color(.systemGray4), lineWidth: 1)
-                        )
-                }
-            }
-            
-            if let recipientMessage = vm.latestRecipientMessage {
-                HStack {
-                    Text(recipientMessage.text)
-                        .font(.title)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(radius: 5)
-                        .multilineTextAlignment(.center)
-                    
-                    // Save button for recipient's message
-                    if  !recipientMessage.text.isEmpty {
-                        Button(action: {
-                            vm.chatText = ""
-                        }) {
-                            if #available(iOS 18.0, *) {
-                                // iOS 18.0 or newer: Only show the first frame of the Lottie file
-                                LottieAnimationViewContainer(filename: "Clear Button", isInteractive: false)
-                                    .frame(width: 24, height: 24)
-                            } else {
-                                // iOS versions below 18.0: Use full Lottie animation with interactivity
-                                LottieAnimationViewContainer(filename: "Clear Button", isInteractive: true)
-                                    .frame(width: 24, height: 24)
-                            }
-                        }
-                    }
-                }
-                .padding()
-            }
-            
-            Spacer()
-            
-            if let senderMessage = vm.latestSenderMessage {
-                VStack {
-                    HStack {
-                        Text(senderMessage.text)
-                            .font(.title)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .shadow(radius: 5)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding()
-                    
-                    Text(senderMessage.seen ? "Seen" : "Unseen")
-                        .font(.caption)
-                        .foregroundColor(senderMessage.seen ? .green : .gray)
-                        .padding(.bottom, 8)
-                }
-            }
-        }
-        .background(Color(.init(white: 0.95, alpha: 1)))
-        .edgesIgnoringSafeArea(.bottom)
-    }
-    
-    private var messageInputBar: some View {
-        HStack(spacing: 16) {
-            TextEditor(text: $vm.chatText)
-                .frame(height: 40)
-                .padding(8)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-            
-            if !vm.chatText.isEmpty {
-                Button(action: {
-                    vm.saveMessage(sender: "Me", messageText: vm.chatText, timestamp: Timestamp())
-                }) {
-                    Image(systemName: "square.and.arrow.down")
-                        .foregroundColor(.blue)
-                }
-            }
-            
-            // Clear button for clearing the text field
-            if !vm.chatText.isEmpty {
-                Button(action: {
-                    vm.chatText = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
-                }
-            }
-        }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
-    }
-}
-
-struct SavedMessagesView: View {
-    @ObservedObject var vm: ChatLogViewModel
-    
-    var body: some View {
-        ScrollView {
-            VStack {
-                ForEach(vm.savedMessages.sorted { $0.timeStamp.dateValue() < $1.timeStamp.dateValue() }) { message in
-                    HStack {
-                        if message.sender == "Me" {  // Ensure 'sender' is a String and correctly stored
-                            Spacer()
-                            VStack(alignment: .trailing) {
-                                Text("Me")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                Text(message.text)
-                                    .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
-                            }
-                        } else if message.sender == "You" {  // Ensure 'sender' is a String and correctly stored
-                            VStack(alignment: .leading) {
-                                Text(vm.chatUser?.email ?? "You")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                Text(message.text)
-                                    .padding()
-                                    .background(Color.gray.opacity(0.2))
-                                    .cornerRadius(8)
-                            }
-                            Spacer()
-                        }
-                    }
-                    .padding()
-                }
-            }
-        }
-        .padding()
-    }
 }
 
 struct LottieAnimationViewContainer: UIViewRepresentable {
@@ -1277,6 +1339,241 @@ struct LottieAnimationViewContainer: UIViewRepresentable {
         if let animationView = context.coordinator.animationView {
             if !isInteractive {
                 animationView.currentFrame = 0
+            }
+        }
+    }
+}
+
+struct ImageViewerView: View {
+    let images: [String]
+    @Binding var currentIndex: Int
+    let onDelete: (Int) -> Void
+    @Environment(\.presentationMode) var presentationMode
+    
+    @State private var progress: CGFloat = 0
+    @State private var isPaused = false
+    @State private var opacity: Double = 1.0
+    @State private var timer: Timer?
+    @State private var offset = CGSize.zero
+    @State private var scale: CGFloat = 1.0
+    @State private var isTransitioning = false
+    @State private var startTime: Date?
+    @State private var elapsedTime: TimeInterval = 0
+    @GestureState private var dragState = CGSize.zero
+    @GestureState private var isPressed = false
+    
+    private let duration: TimeInterval = 5.0
+    private let updateInterval: TimeInterval = 0.01
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
+                
+                if !images.isEmpty {
+                    GeometryReader { geometry in
+                        WebImage(url: URL(string: images[currentIndex]))
+                            .resizable()
+                            .scaledToFit()
+                            .scaleEffect(scale)
+                            .offset(x: offset.width + dragState.width, y: offset.height + dragState.height)
+                            .opacity(opacity)
+                            .animation(.interactiveSpring(), value: dragState)
+                            .animation(.easeInOut(duration: 0.3), value: opacity)
+                            .gesture(
+                                DragGesture()
+                                    .updating($dragState) { value, state, _ in
+                                        if !isTransitioning {
+                                            state = value.translation
+                                        }
+                                    }
+                                    .onEnded { value in
+                                        guard !isTransitioning else { return }
+                                        handleDragGesture(value)
+                                    }
+                            )
+                            .gesture(
+                                MagnificationGesture()
+                                    .onChanged { value in
+                                        if !isTransitioning {
+                                            scale = value.magnitude
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        withAnimation(.spring()) {
+                                            scale = 1.0
+                                        }
+                                    }
+                            )
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
+                }
+                
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.3))
+                            .frame(height: 2)
+                        
+                        Rectangle()
+                            .fill(Color.white)
+                            .frame(width: geometry.size.width * progress, height: 2)
+                            .animation(.linear(duration: updateInterval), value: progress)
+                    }
+                    .frame(maxHeight: .infinity, alignment: .top)
+                }
+                
+                Color.clear
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .updating($isPressed) { _, state, _ in
+                                state = true
+                            }
+                    )
+                
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            if !isTransitioning {
+                                handleNextAndDelete()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                if currentIndex >= images.count - 1 {
+                                    Text("Cancel")
+                                        .font(.system(size: 16, weight: .regular))
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .medium))
+                                } else {
+                                    Text("Next")
+                                        .font(.system(size: 16, weight: .regular))
+                                    Image(systemName: "arrow.right")
+                                        .font(.system(size: 16, weight: .medium))
+                                }
+                            }
+                            .foregroundColor(.white)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(Color.black.opacity(0.5))
+                            .cornerRadius(8)
+                        }
+                        .padding()
+                    }
+                    Spacer()
+                }
+            }
+            .onChange(of: isPressed) { newValue in
+                isPaused = newValue
+            }
+            .onAppear {
+                startTimer()
+            }
+            .onDisappear {
+                timer?.invalidate()
+            }
+        }
+    }
+    
+    private func handleNextAndDelete() {
+        guard !isTransitioning else { return }
+        isTransitioning = true
+        timer?.invalidate()
+        
+        withAnimation(.easeOut(duration: 0.3)) {
+            opacity = 0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            let isLastImage = currentIndex >= images.count - 1
+            onDelete(currentIndex)
+            
+            if isLastImage {
+                // If it was the last image, dismiss the viewer
+                presentationMode.wrappedValue.dismiss()
+            } else {
+                // Stay at the same index since the array has shifted
+                progress = 0
+                elapsedTime = 0
+                withAnimation(.easeIn(duration: 0.3)) {
+                    opacity = 1
+                }
+                isTransitioning = false
+                startTimer()
+            }
+        }
+    }
+    
+    private func handleDragGesture(_ value: DragGesture.Value) {
+        let threshold: CGFloat = 100
+        if value.translation.width > threshold {
+            deleteCurrentImage()
+        } else if abs(value.translation.height) > threshold {
+            dismissViewer()
+        } else {
+            withAnimation(.interactiveSpring()) {
+                offset = .zero
+            }
+        }
+    }
+    
+    private func deleteCurrentImage() {
+        guard !isTransitioning else { return }
+        isTransitioning = true
+        timer?.invalidate()
+        
+        withAnimation(.easeOut(duration: 0.3)) {
+            opacity = 0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            onDelete(currentIndex)
+            if currentIndex >= images.count - 1 {
+                currentIndex = max(0, images.count - 2)
+            }
+            progress = 0
+            elapsedTime = 0
+            withAnimation(.easeIn(duration: 0.3)) {
+                opacity = 1
+            }
+            isTransitioning = false
+            startTimer()
+        }
+    }
+    
+    private func dismissViewer() {
+        guard !isTransitioning else { return }
+        isTransitioning = true
+        timer?.invalidate()
+        
+        withAnimation(.easeOut(duration: 0.3)) {
+            offset = dragState
+            opacity = 0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            presentationMode.wrappedValue.dismiss()
+        }
+    }
+    
+    private func startTimer() {
+        timer?.invalidate()
+        startTime = Date()
+        elapsedTime = 0
+        progress = 0
+        
+        timer = Timer.scheduledTimer(withTimeInterval: updateInterval, repeats: true) { _ in
+            guard !isPaused else {
+                startTime = Date().addingTimeInterval(-elapsedTime)
+                return
+            }
+            
+            elapsedTime = Date().timeIntervalSince(startTime ?? Date())
+            progress = min(CGFloat(elapsedTime / duration), 1.0)
+            
+            if elapsedTime >= duration {
+                handleNextAndDelete()
             }
         }
     }

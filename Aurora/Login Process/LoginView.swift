@@ -6,8 +6,6 @@ import AuthenticationServices
 import CryptoKit
 
 
-
-
 struct LoginView: View {
     @Environment(\.window) var window
     @AppStorage("isLoggedIn") private var isLoggedIn: Bool = false
