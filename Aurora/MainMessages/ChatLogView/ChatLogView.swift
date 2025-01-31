@@ -936,7 +936,7 @@ struct ChatLogView: View {
                                                 showImageViewer = true
                                                 currentImageIndex = 0
                                             }) {
-                                                Image(systemName: "photo.stack")
+                                                Image("chatlogviewimagebutton")
                                                     .resizable()
                                                     .scaledToFit()
                                                     .frame(width: 24, height: 24)
@@ -1108,9 +1108,8 @@ struct ChatLogView: View {
                                         }) {
                                             Image("chatlogviewcamerabutton")
                                                 .resizable()
-                                                .scaledToFit()
-                                                .frame(width: 24, height: 24)
-                                                .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                                .frame(width: 26, height: 26)
+                                                .padding(.horizontal, 2)
                                         }
                                         .sheet(isPresented: $showCameraPicker) {
                                             ImagePicker(image: $vm.selectedImage, sourceType: .camera)
@@ -1121,6 +1120,7 @@ struct ChatLogView: View {
                                                     }
                                                 }
                                         }
+                              
 
                                         // Camera button
                                         Button(action: {
@@ -1129,9 +1129,8 @@ struct ChatLogView: View {
                                         }) {
                                             Image("chatlogviewimagebutton")
                                                 .resizable()
-                                                .scaledToFit()
-                                                .frame(width: 24, height: 24)
-                                                .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                                .frame(width: 26, height: 26)
+                                                .padding(.horizontal, 2)
                                         }
                                         // Add these modifiers to your view
                                         .sheet(isPresented: $vm.showImagePicker) {
@@ -1143,6 +1142,9 @@ struct ChatLogView: View {
                                                     }
                                                 }
                                         }
+                                        
+                                        
+                                        
                                         if !vm.chatText.isEmpty {
                                             Button(action: {
                                                 vm.saveMessageForSelf(sender: "Me", messageText: vm.chatText, timestamp: Timestamp())

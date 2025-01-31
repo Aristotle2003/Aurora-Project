@@ -349,7 +349,7 @@ struct SearchBar: View {
                 .foregroundColor(.gray)
             
             // Search input field
-            TextField("Search friends", text: $text)
+            TextField("Search friends by username", text: $text)
                 .font(.system(size: 14)) // Set font size
                 .foregroundColor(.gray)
                 .submitLabel(.search) // Enable "Search" key on keyboard

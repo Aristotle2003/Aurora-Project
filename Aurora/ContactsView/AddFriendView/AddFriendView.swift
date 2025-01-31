@@ -24,7 +24,7 @@ class AddFriendViewModel: ObservableObject {
     @Published var errorMessage = ""              // Error message
     
     private var allUsers = [ChatUser]()           // Full list of non-friend users before filtering
-    
+
     init() {
         fetchNonFriendUsers()
         fetchCurrentUser()
@@ -203,6 +203,7 @@ struct AddFriendView: View {
     @State private var chatUser: ChatUser? = nil
     @State private var navigateToProfile = false
     @State private var sentRequests: Set<String> = [] // Tracks UIDs of users who have been sent requests
+    @FocusState private var isFocused: Bool
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -228,6 +229,10 @@ struct AddFriendView: View {
             ZStack {
                 Color(red: 0.976, green: 0.980, blue: 1.0)
                     .ignoresSafeArea()
+                    .onTapGesture {
+                        isFocused = false
+                    }
+
                 VStack(spacing: 0){
                     ZStack{
                         Image("liuhaier")
@@ -266,9 +271,10 @@ struct AddFriendView: View {
                     .frame(height: UIScreen.main.bounds.height * 0.07)
                     
                     VStack{
-                        SearchBar(text: $vm.searchText) {
+                        SearchBarforAddFriend(text: $vm.searchText) {
                             vm.filterUsers()
                         }
+                        .focused($isFocused)
                         .padding(.vertical, 8)
                         
                         Button(action: {
@@ -537,3 +543,65 @@ struct AddFriendView: View {
             }
     }
 }
+
+
+struct SearchBarforAddFriend: View {
+    @Binding var text: String
+    var onSearch: () -> Void  // Callback for the search action
+    // @FocusState private var isFocused: Bool
+    
+    func generateHapticFeedbackMedium() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare()
+        generator.impactOccurred()
+    }
+    
+    func generateHapticFeedbackHeavy() {
+        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        generator.prepare()
+        generator.impactOccurred()
+    }
+    
+    var body: some View {
+        HStack {
+            Spacer()
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.gray)
+            
+            // Search input field
+            TextField("Search friends by phone or email", text: $text)
+                .font(.system(size: 14)) // Set font size
+                .foregroundColor(.gray)
+                .submitLabel(.search) // Enable "Search" key on keyboard
+                .onSubmit {
+                    onSearch()  // Trigger search when "Search" key is pressed
+                }
+            // .onTapGesture {
+            //     isFocused = true
+            // }
+            
+            
+            // Clear button (conditionally shown)
+            if !text.isEmpty {
+                Button(action: {
+                    text = ""  // Clear search text
+                    onSearch()  // Trigger search after clearing
+                    generateHapticFeedbackMedium()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+        }
+        .padding(10) // Add padding inside the search bar
+        .background(
+            RoundedRectangle(cornerRadius: 20) // Round corners
+                .fill(Color.white) // White background
+            
+        )
+        .frame(maxWidth: .infinity) // Centralized horizontally
+        .padding(.horizontal, 20) // Add spacing from edges
+    }
+}
+
+
