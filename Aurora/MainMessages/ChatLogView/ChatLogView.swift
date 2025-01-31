@@ -936,12 +936,10 @@ struct ChatLogView: View {
                                                 showImageViewer = true
                                                 currentImageIndex = 0
                                             }) {
-                                                Image("chatlogviewimagebutton")
+                                                Image("chatlogviewimageunopenedbutton")
                                                     .resizable()
-                                                    .scaledToFit()
-                                                    .frame(width: 24, height: 24)
-                                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                                    .padding(.leading, 30)
+                                                    .frame(width: 66, height: 25)
+                                                    .padding(.leading, 20)
                                             }
                                             .sheet(isPresented: $showImageViewer) {
                                                 ImageViewerView(images: vm.receivedImages, currentIndex: $currentImageIndex) { index in

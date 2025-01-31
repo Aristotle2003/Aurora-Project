@@ -191,6 +191,7 @@ struct CustomTabNavigationView: View {
     @StateObject private var vm = CustomTabNavigationViewModel()
     @StateObject private var chatLogViewModel = ChatLogViewModel(chatUser: nil)
     @State private var currentUser: ChatUser? = nil
+    @State private var showSplash = true  // Add this line
     
     var body: some View {
         ZStack{
@@ -222,10 +223,25 @@ struct CustomTabNavigationView: View {
                 Spacer()
                 CustomNavBar(currentView: $currentView)
             }
+            // Splash overlay
+            if showSplash {
+                Image("splashscreen") // Replace with your image name
+                    .resizable()
+                    .scaledToFill()
+                    .edgesIgnoringSafeArea(.all)
+                    .transition(.opacity)
+                    .zIndex(1) // Ensure it's above other content
+            }
         }
         .ignoresSafeArea(edges: .bottom)
+        
         .onAppear{
             vm.fetchAndStoreFCMToken()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                withAnimation {
+                    showSplash = false
+                }
+            }
         }
         
     }

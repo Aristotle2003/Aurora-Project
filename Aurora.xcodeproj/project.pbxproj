@@ -27,6 +27,7 @@
 		FB42CB832CD66D9E00283244 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB42CB822CD66D9E00283244 /* EditProfileView.swift */; };
 		FB42CB882CD81DA000283244 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = FB42CB872CD81DA000283244 /* GoogleSignIn */; };
 		FB42CB8A2CD81DA000283244 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FB42CB892CD81DA000283244 /* GoogleSignInSwift */; };
+		FB54699F2D4D6B8000C81A3A /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB54699E2D4D6B8000C81A3A /* LoadingView.swift */; };
 		FB6764232CEE856400FCE17E /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = FB6764222CEE856400FCE17E /* Lottie */; };
 		FB6764292CEEE82D00FCE17E /* Clear Button.json in Resources */ = {isa = PBXBuildFile; fileRef = FB6764282CEEE82D00FCE17E /* Clear Button.json */; };
 		FB67642B2CEEE83E00FCE17E /* Save Button.json in Resources */ = {isa = PBXBuildFile; fileRef = FB67642A2CEEE83E00FCE17E /* Save Button.json */; };
@@ -90,6 +91,7 @@
 		FB3C61172CE0F497001A0922 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		FB42CB7F2CD5B5A000283244 /* FriendGroupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendGroupView.swift; sourceTree = "<group>"; };
 		FB42CB822CD66D9E00283244 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
+		FB54699E2D4D6B8000C81A3A /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
 		FB6764282CEEE82D00FCE17E /* Clear Button.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Clear Button.json"; sourceTree = "<group>"; };
 		FB67642A2CEEE83E00FCE17E /* Save Button.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Save Button.json"; sourceTree = "<group>"; };
 		FB7E20752CBCC6E900209582 /* Aurora.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aurora.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -376,6 +378,7 @@
 				FB83BDA32CDACB7500A7BE4E /* ProfileSetupView.swift */,
 				FB2CBDE42D32081400619A1A /* TermsOfServiceView.swift */,
 				FB2CBDE62D32083D00619A1A /* PrivacyPolicyView.swift */,
+				FB54699E2D4D6B8000C81A3A /* LoadingView.swift */,
 			);
 			path = "Login Process";
 			sourceTree = "<group>";
@@ -562,6 +565,7 @@
 				FB7E20BE2CC15CAB00209582 /* ContactsView.swift in Sources */,
 				FB42CB832CD66D9E00283244 /* EditProfileView.swift in Sources */,
 				FB7E207B2CBCC6E900209582 /* LoginView.swift in Sources */,
+				FB54699F2D4D6B8000C81A3A /* LoadingView.swift in Sources */,
 				FB23D5752CFE51C8003C245A /* ChangePhoneView.swift in Sources */,
 				FB83BDA22CDACB5400A7BE4E /* PhoneVerificationView.swift in Sources */,
 				FB7E20792CBCC6E900209582 /* AuroraApp.swift in Sources */,

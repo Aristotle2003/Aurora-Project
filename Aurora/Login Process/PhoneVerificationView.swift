@@ -27,6 +27,7 @@ struct PhoneVerificationView: View {
     
     @State private var showProfileSetup: Bool = false
     @State private var previousUser: User? = nil
+    @FocusState private var focusItem: Bool
     @State private var errorMessage: String = ""
     
     func generateHapticFeedbackMedium() {
@@ -73,7 +74,7 @@ struct PhoneVerificationView: View {
                             .padding(.bottom, 4)
                         
                         Spacer()
-                            .frame(height: 90)
+                            .frame(height: 80)
                         
                     }
                     .padding(.bottom, 10)
@@ -90,6 +91,22 @@ struct PhoneVerificationView: View {
                         // Verification code input
                         TextField("Enter verification code", text: $verificationCode)
                             .keyboardType(.numberPad)
+                            .focused($focusItem)
+                            .toolbar {
+                                if focusItem {  // Only show when keyboard is visible
+                                    ToolbarItemGroup(placement: .confirmationAction) {
+                                        Spacer()
+                                        Button {
+                                            focusItem = false
+                                        } label: {
+                                            Text("Done")
+                                                .fontWeight(.bold)
+                                                .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
+                                                .font(.system(size: 17))
+                                        }
+                                    }
+                                }
+                            }
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 16)    // Horizontal padding for spacing inside the bubble
                             .frame(height: 48)
@@ -197,6 +214,22 @@ struct PhoneVerificationView: View {
             TextField("Phone Number", text: $newPhone)
                 .keyboardType(.phonePad)
                 .textContentType(.telephoneNumber)
+                .focused($focusItem)
+                .toolbar {
+                    if focusItem {  // Only show when keyboard is visible
+                        ToolbarItemGroup(placement: .confirmationAction) {
+                            Spacer()
+                            Button {
+                                focusItem = false
+                            } label: {
+                                Text("Done")
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
+                                    .font(.system(size: 17))
+                            }
+                        }
+                    }
+                }
                 .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
                 .padding(.horizontal, 16)
                 .frame(height: 48)
@@ -214,7 +247,7 @@ struct PhoneVerificationView: View {
             requestVerificationCode()
             generateHapticFeedbackMedium()
         } label: {
-            Image("sendbutton")
+            Image(newPhone.isEmpty && !isPreEmailVerification ? "sendbuttonunpressed" : "sendbutton")
                 .resizable()
                 .scaledToFit()
                 .frame(width: UIScreen.main.bounds.width - 80)
@@ -228,11 +261,13 @@ struct PhoneVerificationView: View {
             verifyCode()
             generateHapticFeedbackMedium()
         } label: {
-            Image("verifybutton")
+            Image(verificationCode.isEmpty ? "verifybuttonunpressed" : "verifybutton")
                 .resizable()
                 .scaledToFit()
                 .frame(width: UIScreen.main.bounds.width - 80)
         }
+        .disabled(verificationCode.isEmpty)
+        .opacity(verificationCode.isEmpty ? 0.6 : 1)
     }
     
     
@@ -363,13 +398,7 @@ struct PhoneVerificationView: View {
         FirebaseManager.shared.auth.signIn(with: credential) { authResult, error in
             DispatchQueue.main.async {
                 if let error = error as NSError? {
-                    // Handle MFA if required
-                    if error.code == AuthErrorCode.secondFactorRequired.rawValue {
-                        self.handleMultiFactorAuthentication(error: error)
-                    } else {
-                        self.errorMessage = error.localizedDescription
-                        return
-                    }
+                    self.errorMessage = error.localizedDescription
                     return
                 }
                 
@@ -380,7 +409,7 @@ struct PhoneVerificationView: View {
     }
     
     
-    
+    /*
     // MFA given by Firebase
     private func handleMultiFactorAuthentication(error: NSError) {
         if let resolver = error.userInfo[AuthErrorUserInfoMultiFactorResolverKey] as? MultiFactorResolver {
@@ -433,7 +462,7 @@ struct PhoneVerificationView: View {
             )
         }
     }
-    
+    */
     
     
     // Link two accounts (current user link to the new login credential)
@@ -443,14 +472,9 @@ struct PhoneVerificationView: View {
                 switch error.code {
                 case AuthErrorCode.credentialAlreadyInUse.rawValue:
                     print("[Log]: Unexpected credentialAlreadyInUse error. This shouldn't happen as phone number existence is pre-checked.")
-                    self.errorMessage = "Unexpected error. Please retry or contact support."
-                    
-                case AuthErrorCode.secondFactorRequired.rawValue:
-                    print("[Log]: Multi-factor authentication required.")
-                    self.handleMultiFactorAuthentication(error: error)
-                    
+                    self.errorMessage = "This phone number is already linked to an account. Please log in or use a different phone number."
                 default:
-                    self.errorMessage = "Linking failed: \(error.localizedDescription)"
+                    self.errorMessage = "Something went wrong. Please check your internet connection and try again."
                     print("[Error]: \(self.errorMessage)")
                 }
                 return
@@ -467,7 +491,7 @@ struct PhoneVerificationView: View {
     // Handle successful sign in
     private func handleSuccessfulSignIn(_ user: User?) {
         guard let user = user else {
-            self.errorMessage = "Failed to get user information"
+            self.errorMessage = "Failed to log in"
             return
         }
         
@@ -514,6 +538,5 @@ struct PhoneVerificationView: View {
                     SeenTutorial = false
                 }
             }
-    } 
+    }
 }
-

@@ -41,7 +41,7 @@ struct TermsOfServiceView: View {
                                 .font(.system(size: 28, weight: .bold, design: .serif))
                                 .foregroundColor(.white)
                             
-                            Text("Last Modified: 01/06/2025")
+                            Text("Last Modified: 01/29/2025")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white.opacity(0.8))
                         }
@@ -52,13 +52,16 @@ struct TermsOfServiceView: View {
                             iconName: "sparkles",
                             title: "Introduction",
                             content: """
-Welcome to Aurora (referred to as the "Service"). Please read these Terms of Service (referred to as the "Terms") carefully as they govern your use of Aurora, including any updates, features, and services offered through our platform.
+Welcome to Aurora!!
 
-By accessing or using Aurora, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service. For users under 18 years of age, you must review and agree to these Terms with a parent or legal guardian.
+These Terms of Service ("Terms") govern your use of Aurora and all associated services (collectively, the "Service"). By using Aurora, you accept these Terms in full. If you disagree with any part of these Terms, you must not use the Service.
+These Terms constitute a legally binding agreement between you and Aurora. While we've written them to be as clear as possible, certain sections retain formal legal language to ensure their enforceability.
 
-We've drafted these Terms in plain language where possible, though some sections may still read like a traditional contract since they form a legally binding agreement between you and Aurora.
-
-ARBITRATION NOTICE: THESE TERMS CONTAIN AN ARBITRATION CLAUSE AND CLASS-ACTION WAIVER. BY USING OUR SERVICES, YOU AGREE THAT DISPUTES BETWEEN US WILL BE RESOLVED BY BINDING, INDIVIDUAL ARBITRATION, AND YOU WAIVE YOUR RIGHT TO PARTICIPATE IN A CLASS-ACTION LAWSUIT OR CLASS-WIDE ARBITRATION.
+IMPORTANT: ARBITRATION AGREEMENT
+By using Aurora, you agree that all disputes between us will be resolved through binding individual arbitration. This means you waive your right to:
+1. Participate in a class-action lawsuit against us
+2. Join any class-wide arbitration
+3. Have disputes heard by a judge or jury
 """
                         )
                         
@@ -237,7 +240,6 @@ Arbitration agreement survives termination of your account.
                             content: """
 For questions about these Terms, contact us at:
 Email: aurora888borealis888@gmail.com
-Address: 70 Morningside Drive
 """
                         )
                         
