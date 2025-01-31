@@ -401,7 +401,7 @@ struct FriendGroupView: View {
                                                         }
                                                     }
                                                     .onEnded { _ in
-                                                        if abs(offset.width) > 150 {
+                                                        if offset.width > 75 {
                                                             withAnimation {
                                                                 offset = CGSize(width: offset.width > 0 ? 500 : -500, height: 0)
                                                                 topCardIndex += 1
@@ -410,7 +410,18 @@ struct FriendGroupView: View {
                                                                 }
                                                                 offset = .zero
                                                             }
-                                                        } else {
+                                                        }
+                                                        else if offset.width < -75 {
+                                                            withAnimation {
+                                                                offset = CGSize(width: offset.width > 0 ? 500 : -500, height: 0)
+                                                                topCardIndex -= 1
+                                                                if topCardIndex <= -1 {
+                                                                    topCardIndex = vm.responses.count-1
+                                                                }
+                                                                offset = .zero
+                                                            }
+                                                        }
+                                                        else {
                                                             withAnimation {
                                                                 offset = .zero
                                                             }
@@ -560,6 +571,7 @@ struct Comment: Identifiable {
     let content: String
     let timestamp: Date // 添加时间戳字段
     let replyTarget: String? // 添加回复目标字段
+    let replyTargetUid: String? // 添加回复目标uid
     let parentCommentId: String? // 新增，用来存父评论的文档ID
     let rootCommentId: String? // 新增，用来存根评论的文档ID
 }
@@ -595,6 +607,7 @@ struct ResponseCard: View {
             }
         }
         .onTapGesture {
+            isFocused = false
             // 点击时翻面
             if !isFlipped {
                 // 在翻到背面时拉取评论
@@ -608,98 +621,38 @@ struct ResponseCard: View {
                height: UIScreen.main.bounds.height * 0.42253)
         .aspectRatio(contentMode: .fit)
         .sheet(isPresented: $showReportSheet) {
-            ZStack {
-                Color(red: 0.976, green: 0.980, blue: 1.0)
-                    .ignoresSafeArea()
+            VStack(spacing: 20) {
+                Text("Report this response").font(.headline)
                 
-                VStack(spacing: 0) {
-                    // Header
-                    ZStack {
-                        Color.white
-                            .shadow(color: Color.black.opacity(0.05), radius: 2, y: 2)
-                        
-                        Text("Report Response")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                TextField("Enter your report reason", text: $reportContent)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                
+                HStack {
+                    Button(action: {
+                        // 关闭报告视图
+                        showReportSheet = false
+                    }) {
+                        Text("Cancel")
+                            .padding()
+                            .background(Color.gray.opacity(0.3))
+                            .cornerRadius(8)
                     }
-                    .frame(height: 60)
                     
-                    // Content
-                    VStack(spacing: 24) {
-                        // Report Input Field
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Why are you reporting this response?")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                .padding(.leading, 4)
-                            
-                            TextEditor(text: $reportContent)
-                                .frame(height: 120)
-                                .padding(12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.white)
-                                        .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.2), lineWidth: 1)
-                                )
-                        }
-                        
-                        // Notice Text
-                        Text("Your report helps us maintain the quality of responses. We'll review this and take appropriate action if needed.")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                        
-                        // Buttons
-                        HStack(spacing: 16) {
-                            // Cancel Button
-                            Button(action: {
-                                showReportSheet = false
-                            }) {
-                                Text("Cancel")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 50)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.white)
-                                            .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.2), lineWidth: 1)
-                                    )
-                            }
-                            
-                            // Submit Button
-                            Button(action: {
-                                reportFriend()
-                                showReportSheet = false
-                            }) {
-                                Text("Submit Report")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 50)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                            .shadow(color: Color(red: 0.49, green: 0.52, blue: 0.75).opacity(0.3), radius: 4, y: 2)
-                                    )
-                            }
-                        }
+                    Button(action: {
+                        // 提交报告
+                        reportFriend()
+                        showReportSheet = false
+                    }) {
+                        Text("Submit")
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
                     }
-                    .padding(24)
-                    
-                    Spacer()
                 }
             }
-            .presentationDetents([.height(400)])
+            .padding()
         }
         .alert(isPresented: $showDeleteAlert) {
             Alert(
@@ -1180,7 +1133,7 @@ struct ResponseCard: View {
                                 } else {
                                     ForEach(subComments.prefix(2)) { subComment in
                                         HStack(alignment: .top, spacing: 10) {
-                                            // ...existing 子评论UI...
+                                            
                                         }
                                         .padding(.horizontal)
                                     }
@@ -1365,6 +1318,7 @@ struct ResponseCard: View {
                 "timestamp": FieldValue.serverTimestamp(), // 添加时间戳字段
                 "replyTarget": replyComment?.userName ?? "", // 如果存在被回复的comment，存它的userName
                 "parentCommentId": replyComment?.docId ?? "", // 使用父评论的文档ID
+                "replyTargetUid": replyComment?.uid ?? "",
                 "rootCommentId": rootId // 新增，存根评论的文档ID
             ]
 
@@ -1414,6 +1368,7 @@ struct ResponseCard: View {
                             content: data["content"] as? String ?? "",
                             timestamp: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date(), // 获取时间戳
                             replyTarget: data["replyTarget"] as? String ?? "", // 获取被回复的comment的userName
+                            replyTargetUid: data["replyTargetUid"] as? String ?? "",
                             parentCommentId: data["parentCommentId"] as? String ?? "",
                             rootCommentId: data["rootCommentId"] as? String ?? ""
                         )
@@ -1478,6 +1433,9 @@ struct FullScreenResponseInputView: View {
                 ZStack {
                     Color(red: 0.976, green: 0.980, blue: 1.0)
                         .ignoresSafeArea()
+                        .onTapGesture {
+                            isResponseTextFocused = false // 点击空白收回键盘
+                        }
                     
                     VStack {
                         let topbarheight = UIScreen.main.bounds.height * 0.055

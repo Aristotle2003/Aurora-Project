@@ -219,7 +219,6 @@ class ChatLogViewModel: ObservableObject {
         stopAutoSend()
         self.showImagePicker = false
         self.receivedImages = []
-        // Reset all properties
         self.chatText = ""
         self.errorMessage = ""
         self.latestSenderMessage = nil
@@ -244,20 +243,26 @@ class ChatLogViewModel: ObservableObject {
     }
     
     func reset() {
-        // Reset all state variables
-        chatText = ""
-        errorMessage = ""
-        latestSenderMessage = nil
-        latestRecipientMessage = nil
-        savingTrigger = true
-        isChatUserActive = false
-        chatUserLastSeen = nil
-        
-        // Stop all listeners
+        // Stop all existing listeners
         stopListening()
         stopListeningForActiveStatus()
         stopListeningForSavingTrigger()
+        stopListeningForImages()
         stopAutoSend()
+        self.showImagePicker = false
+        self.receivedImages = []
+        // Reset all properties
+        self.chatText = ""
+        self.errorMessage = ""
+        self.latestSenderMessage = nil
+        self.latestRecipientMessage = nil
+        self.hasUnseenImages = false
+        self.showSavedMessagesWindow = false
+        self.savedMessages = []
+        self.isChatUserActive = false
+        self.chatUserLastSeen = nil
+        self.savingTrigger = true
+        self.lastState = false
         
         // Clear timers
         timer?.invalidate()
@@ -1101,7 +1106,7 @@ struct ChatLogView: View {
                                             showCameraPicker = true
                                             generateHapticFeedbackMedium()
                                         }) {
-                                            Image(systemName: "camera.fill")
+                                            Image("chatlogviewcamerabutton")
                                                 .resizable()
                                                 .scaledToFit()
                                                 .frame(width: 24, height: 24)
@@ -1122,7 +1127,7 @@ struct ChatLogView: View {
                                             vm.showImagePicker = true
                                             generateHapticFeedbackMedium()
                                         }) {
-                                            Image(systemName: "photo.fill")
+                                            Image("chatlogviewimagebutton")
                                                 .resizable()
                                                 .scaledToFit()
                                                 .frame(width: 24, height: 24)
