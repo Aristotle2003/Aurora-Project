@@ -24,8 +24,10 @@ struct ChangePhoneView: View {
     
     @State private var newPhoneCredential: PhoneAuthCredential?
     @State private var isLoading: Bool = false
+    @FocusState private var focusItem: Bool
 
     @State private var errorMessage: String = ""
+    let onComplete: (String) -> Void
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -45,144 +47,210 @@ struct ChangePhoneView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    headerView
-                    
-                    if !showVerificationField {
-                        PhoneInputView
-                        
-                        // Friendly reminder
-                        Text("You will receive an SMS verification code.")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        
-                        sendCodeButton
-                    } else {
-                        // Verification code input
-                        TextField("Enter verification code", text: $verificationCode)
-                            .keyboardType(.numberPad)
-                            .padding(12)
-                            .background(Color.white)
-                            .cornerRadius(8)
-                            .multilineTextAlignment(.center)
-                        
-                        verifyCodeButton
-                        
-                        Button("Change Phone Number") {
-                            dismiss()
+            ZStack{
+                Color(red: 0.976, green: 0.980, blue: 1.0)
+                    .ignoresSafeArea()
+                VStack(spacing: 0) {
+                    // Custom Navigation Header
+                    HStack {
+                        Button(action: {
+                            generateHapticFeedbackMedium()
+                            dismiss() // Dismiss the view when back button is pressed
+                        }) {
+                            Image("chatlogviewbackbutton") // Replace with your back button image
+                                .resizable()
+                                .frame(width: 24, height: 24) // Customize this color
                         }
-                        .foregroundColor(.blue)
+                        Spacer()
+                        Text("Change Phone Number")
+                            .font(.system(size: 20, weight: .bold)) // Customize font style
+                            .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255)) // Customize text color
+                        Spacer()
+                        Image("spacerformainmessageviewtopleft") // Replace with your back button image
+                            .resizable()
+                            .frame(width: 24, height: 24) // To balance the back button
                     }
+                    .padding()
+                    .background(Color(red: 229/255, green: 232/255, blue: 254/255))
                     
-                    if isLoading {
-                        ProgressView()
-                    }
-                    
-                    if !errorMessage.isEmpty {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                    }
-                }
-                .padding()
-            }
-            .navigationTitle("Change Phone Number")
-            .navigationBarItems(leading: Button("Cancel") {
-                dismiss()
-            })
-            .background(Color(.init(white: 0, alpha: 0.05)).ignoresSafeArea())
-        }
+                    VStack {
+                        headerView
+                        
+                        if !showVerificationField {
+                            PhoneInputView
+                            
+                            // Friendly reminder
+                            Text("You will receive an SMS verification code.")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(Color(.gray))
+                                .multilineTextAlignment(.leading)
+                                .padding(.leading, 16)
+                                .padding(.bottom, 4)
+                                .padding(.top, 4)
+                            
+                            sendCodeButton
+                        } else {
+                            // Verification code input
+                            TextField("Enter verification code", text: $verificationCode)
+                                .keyboardType(.numberPad)
+                                .focused($focusItem)
+                                .toolbar {
+                                    if focusItem {  // Only show when keyboard is visible
+                                        ToolbarItemGroup(placement: .keyboard) {
+                                            Spacer()
+                                            Button {
+                                                focusItem = false
+                                            } label: {
+                                                Text("Done")
+                                                    .fontWeight(.bold)
+                                                    .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
+                                                    .font(.system(size: 17))
+                                            }
+                                        }
+                                    }
+                                }
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)    // Horizontal padding for spacing inside the bubble
+                                .frame(height: 48)
+                                .background(Color.white)
+                                .cornerRadius(100)
+                            
+                            verifyCodeButton
+                            
+                            Button("Change Phone Number") {
+                                dismiss()
+                            }
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color(.gray))
+                            .multilineTextAlignment(.leading)
+                            .padding(.leading, 16)
+                            .padding(.bottom, 4)
+                            .padding(.top, 4)
+                        }
+                        
+                        if isLoading {
+                            ProgressView()
+                        }
+                        
+                        if !errorMessage.isEmpty {
+                            Text(errorMessage)
+                                .foregroundColor(.red)
+                                .font(.caption)
+                                .multilineTextAlignment(.center)
+                        }
+                        Spacer()
+                    } // VStack ends here
+                    .navigationBarBackButtonHidden(true)
+                    .padding()
+                } // VStack ends here
+                .navigationBarBackButtonHidden(true)
+            } // ZStack ends here
+            .navigationBarBackButtonHidden(true)
+        } // Navigation ends here
+        .navigationBarBackButtonHidden(true)
     }
     
     
     private var headerView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack {
             Text("Send code to your phone number")
-            .font(.headline)
-            .foregroundColor(.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(Color(.gray))
+                .multilineTextAlignment(.leading)
+                .padding(.leading, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 8)
+            Spacer()
         }
     }
     
     
     private var PhoneInputView: some View {
         // Input field for entering a new phone number
-        HStack(spacing: 4) {
+        HStack(spacing: 8) {
             // Country Code Dropdown
             Menu {
                 ForEach(countryCodes, id: \.numericCode) { code in
-                    Button(action: { countryCode = code.numericCode }) {
-                        Text("+\(code.numericCode) (\(code.name))") // Show country code and name in the menu
+                    Button(action: {
+                        countryCode = code.numericCode
+                        generateHapticFeedbackMedium()
+                    }) {
+                        Text("+\(code.numericCode) (\(code.name))")
+                            .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
                     }
                 }
             } label: {
-                HStack {
-                    Text("+\(countryCode)") // Only show the number in the button
-                        .foregroundColor(.primary)
-                    Image(systemName: "chevron.down") // Add a dropdown arrow icon
+                HStack(spacing: 4) {
+                    Text("+\(countryCode)")
+                        .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
+                    Image(systemName: "chevron.down")
                         .foregroundColor(.gray)
                 }
-                .padding(12)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
+                .frame(width: 98, height: 48)
+                .background(Color.white)
+                .cornerRadius(100)
             }
-            .frame(width: 100)
-            .padding(.leading, -6)
-            
-            
+
             // Phone Number Input Field
             TextField("Phone Number", text: $phoneNumber)
                 .keyboardType(.phonePad)
+                .focused($focusItem)
+                .toolbar {
+                    if focusItem {  // Only show when keyboard is visible
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button {
+                                focusItem = false
+                            } label: {
+                                Text("Done")
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
+                                    .font(.system(size: 17))
+                            }
+                        }
+                    }
+                }
                 .textContentType(.telephoneNumber)
-                .padding(12)
+                .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
+                .padding(.horizontal, 16)
+                .frame(height: 48)
                 .background(Color.white)
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                )
+                .cornerRadius(100)
         }
-        .padding(8)
-        .background(Color.white)
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-        )
     }
 
     
     private var sendCodeButton: some View {
         // Button for sending code
         Button {
-            generateHapticFeedbackMedium()
             requestVerificationCode()
+            generateHapticFeedbackMedium()
         } label: {
-            Text("Send Code")
-                .foregroundColor(.white)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
-                .background(Color.blue)
-                .cornerRadius(12)
+            HStack {
+                Spacer()
+                Image(phoneNumber.isEmpty ? "continuebuttonunpressed" : "continuebutton")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: UIScreen.main.bounds.width - 80)
+                Spacer()
+            }
         }
         .disabled(phoneNumber.isEmpty)
-        .opacity((phoneNumber.isEmpty) ? 0.6 : 1)
+        .opacity(phoneNumber.isEmpty ? 0.6 : 1)
     }
     
     private var verifyCodeButton: some View {
         Button {
-            generateHapticFeedbackMedium()
             verifyCode()
+            generateHapticFeedbackMedium()
         } label: {
-            Text("Verify")
+            Image(verificationCode.isEmpty ? "verifybuttonunpressed" : "verifybutton")
+                .resizable()
+                .scaledToFit()
+                .frame(width: UIScreen.main.bounds.width - 80)
         }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.blue)
-        .foregroundColor(.white)
-        .cornerRadius(8)
+        .disabled(verificationCode.isEmpty)
+        .opacity(verificationCode.isEmpty ? 0.6 : 1)
     }
     
     
@@ -335,6 +403,7 @@ struct ChangePhoneView: View {
                                 print("Error updating phone number in Firestore: \(error.localizedDescription)")
                             } else {
                                 print("Successfully updated phone number in Firestore to \(newPhoneNumber)")
+                                onComplete("Phone number successfully changed!")
                                 dismiss()
                             }
                         }
@@ -374,9 +443,4 @@ struct ChangePhoneView: View {
             completion(true) // Phone number already exists
         }
     }
-}
-
-
-#Preview {
-    ChangePhoneView()
 }

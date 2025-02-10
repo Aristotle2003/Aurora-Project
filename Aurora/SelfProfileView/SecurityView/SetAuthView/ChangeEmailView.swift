@@ -85,8 +85,8 @@ struct ChangeEmailView: View {
                     
                     if !errorMessage.isEmpty {
                         Text(errorMessage)
-                            .font(.caption)
-                            .foregroundColor(.red)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
                             .padding(.top)
                     }
                     Spacer()
@@ -107,17 +107,29 @@ struct ChangeEmailView: View {
             generateHapticFeedbackMedium()
         } label: {
             HStack {
-                Image(systemName: "g.circle.fill")
-                    .font(.system(size: 20))
-                Text("Continue with Google")
-                    .font(.system(size: 16, weight: .medium))
+                Spacer()
+                
+                HStack(spacing: 4) {
+                    Image("googleicon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 12, height: 12)
+                    
+                    Text("Continue with Google")
+                        .font(.system(size: 16.5, weight: .medium))
+                        .foregroundColor(Color(red: 0.231, green: 0.231, blue: 0.231))
+                }
+                
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+            .frame(height: 44)
+            .background(Color.white)
+            .overlay(
+                RoundedRectangle(cornerRadius: 23)
+                    .stroke(Color.gray.opacity(0.4), lineWidth: 0.5)
             )
+            .cornerRadius(23)
+            .padding(.horizontal, 20)
         }
     }
     
@@ -137,27 +149,39 @@ struct ChangeEmailView: View {
                 errorMessage = "Error signing in with Apple: \(error.localizedDescription)"
             }
         }
+        .signInWithAppleButtonStyle(.black)
         .frame(maxWidth: .infinity)
         .frame(height: 44)
-        .cornerRadius(12)
+        .cornerRadius(23)
+        .padding(.horizontal, 20)
     }
     
     // Change Phone Number Button
     private var changePhoneNavigationLink: some View {
-        NavigationLink(destination: ChangePhoneView()) {
+        NavigationLink(destination: ChangePhoneView { message in
+            self.errorMessage = message
+        }) {
             HStack {
-                Image(systemName: "phone")
-                    .foregroundColor(.blue)
-                Text("Change Phone Number")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.blue)
+                Spacer()
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "phone.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 12, height: 12)
+                        .foregroundColor(Color.white)
+                    
+                    Text("Continue with Phone")
+                        .font(.system(size: 16.5, weight: .medium))
+                        .foregroundColor(Color.white)
+                }
+                
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.blue, lineWidth: 1)
-            )
+            .frame(height: 44)
+            .background(Color(red: 0.49, green: 0.52, blue: 0.75))
+            .cornerRadius(23)
+            .padding(.horizontal, 20)
         }
     }
     

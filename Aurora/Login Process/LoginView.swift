@@ -29,6 +29,7 @@ struct LoginView: View {
     @State var hasSeenTutorial = false
     @State private var showTermsOfService = false
     @State private var showPrivacyPolicy = false
+    @State private var isLoading = false
     
     
     
@@ -54,10 +55,10 @@ struct LoginView: View {
     
     
     var body: some View {
-        if Auth.auth().currentUser != nil && isLoggedIn && SeenTutorial{
+        if isLoggedIn && SeenTutorial{
             CustomTabNavigationView()
         }
-        else if Auth.auth().currentUser != nil && isLoggedIn && !SeenTutorial{
+        else if isLoggedIn && !SeenTutorial{
             TutorialView()
         }
         else{
@@ -97,6 +98,7 @@ struct LoginView: View {
                             Button {
                                 verifyPhoneNumber()
                                 generateHapticFeedbackMedium()
+                                focusItem = false
                             } label: {
                                 HStack {
                                     Spacer()
@@ -210,6 +212,10 @@ struct LoginView: View {
                             
                         }
                         .padding(.horizontal, 20)
+                        
+                        if isLoading{
+                            ProgressView()
+                        }
                         
                     } // Scroll View ends here
                     .background(
@@ -410,7 +416,7 @@ struct LoginView: View {
                         if (snapshot?.data()) != nil {
                             checkTutorialStatus()
                             self.isLogin = true
-                            self.isLoggedIn = true
+                            
                         // New user set up profile
                         } else {
                             self.showProfileSetup = true
@@ -461,7 +467,6 @@ struct LoginView: View {
                         if (snapshot?.data()) != nil {
                             checkTutorialStatus()
                             self.isLogin = true
-                            self.isLoggedIn = true
                         // New user set up profile
                         } else {
                             self.showProfileSetup = true
@@ -472,25 +477,32 @@ struct LoginView: View {
     }
     
     private func checkTutorialStatus() {
-            guard let uid = FirebaseManager.shared.auth.currentUser?.uid else { return }
-
-            FirebaseManager.shared.firestore
-                .collection("users")
-                .document(uid)
-                .getDocument { snapshot, error in
-                    if let error = error {
-                        print("Failed to fetch tutorial status: \(error)")
-                        hasSeenTutorial = false
-                        SeenTutorial = false
-                    } else if let data = snapshot?.data(), let seen = data["seen_tutorial"] as? Bool {
-                        hasSeenTutorial = seen
-                        SeenTutorial = seen
-                    } else {
-                        hasSeenTutorial = false
-                        SeenTutorial = false
-                    }
+        guard let uid = FirebaseManager.shared.auth.currentUser?.uid else { return }
+        self.isLoading = true
+        
+        
+        FirebaseManager.shared.firestore
+            .collection("users")
+            .document(uid)
+            .getDocument { snapshot, error in
+                if let error = error {
+                    print("Failed to fetch tutorial status: \(error)")
+                    hasSeenTutorial = false
+                    SeenTutorial = false
+                    self.isLoggedIn = false
+                } else if let data = snapshot?.data(), let seen = data["seen_tutorial"] as? Bool {
+                    hasSeenTutorial = seen
+                    SeenTutorial = seen
+                    self.isLoggedIn = true
+                    isLoading = false
+                } else {
+                    hasSeenTutorial = false
+                    SeenTutorial = false
+                    self.isLoggedIn = true
+                    isLoading = false
                 }
-        }
+            }
+    }
     
     private func randomNonceString(length: Int = 32) -> String {
         precondition(length > 0)

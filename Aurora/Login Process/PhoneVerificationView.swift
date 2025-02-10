@@ -246,6 +246,7 @@ struct PhoneVerificationView: View {
         Button {
             requestVerificationCode()
             generateHapticFeedbackMedium()
+            focusItem = false
         } label: {
             Image(newPhone.isEmpty && !isPreEmailVerification ? "sendbuttonunpressed" : "sendbutton")
                 .resizable()
@@ -260,6 +261,7 @@ struct PhoneVerificationView: View {
         Button {
             verifyCode()
             generateHapticFeedbackMedium()
+            focusItem = false
         } label: {
             Image(verificationCode.isEmpty ? "verifybuttonunpressed" : "verifybutton")
                 .resizable()

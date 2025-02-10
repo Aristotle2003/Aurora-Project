@@ -52,6 +52,7 @@ class ChatLogViewModel: ObservableObject {
     private var imageListener: ListenerRegistration?
     private var listener: ListenerRegistration?
     private var listenerForSavingTrigger: ListenerRegistration?
+    @Published var showImageSuccess = false
     
     
     @Published var statusMessage = ""
@@ -146,6 +147,15 @@ class ChatLogViewModel: ObservableObject {
                 }
                 print("Successfully stored image URL in Firestore")
                 self.statusMessage = "Successfully stored image"
+                
+                // Show success indicator
+                DispatchQueue.main.async {
+                    self.showImageSuccess = true
+                    // Hide after 2 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        self.showImageSuccess = false
+                    }
+                }
             }
         }
     }
@@ -1096,7 +1106,18 @@ struct ChatLogView: View {
                                 // Bottom Save and Clear Buttons
                                 VStack {
                                     Spacer() // Push buttons to the bottom
+                                    
+
+                                    
                                     HStack(spacing: 16) { // 20-point spacing between buttons
+                                        if vm.showImageSuccess {
+                                            Image("chatlogviewimagesentbutton")
+                                                .resizable()
+                                                .frame(width: 66, height: 25)
+                                                .transition(.opacity)
+                                                .padding(.leading, 20)
+                                        }
+                                        
                                         Spacer()
 
                                         // 直接拍照
@@ -1107,7 +1128,7 @@ struct ChatLogView: View {
                                             Image("chatlogviewcamerabutton")
                                                 .resizable()
                                                 .frame(width: 26, height: 26)
-                                                .padding(.horizontal, 2)
+                                                .padding(.horizontal, 1)
                                         }
                                         .sheet(isPresented: $showCameraPicker) {
                                             ImagePicker(image: $vm.selectedImage, sourceType: .camera)
@@ -1128,7 +1149,7 @@ struct ChatLogView: View {
                                             Image("chatlogviewimagebutton")
                                                 .resizable()
                                                 .frame(width: 26, height: 26)
-                                                .padding(.horizontal, 2)
+                                                .padding(.horizontal, 1)
                                         }
                                         // Add these modifiers to your view
                                         .sheet(isPresented: $vm.showImagePicker) {

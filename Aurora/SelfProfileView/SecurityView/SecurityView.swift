@@ -331,17 +331,25 @@ struct SecurityView: View {
             generateHapticFeedbackMedium()
         } label: {
             HStack {
-                Image(systemName: "g.circle.fill")
-                    .font(.system(size: 20))
-                Text("Continue with Google")
-                    .font(.system(size: 16, weight: .medium))
+                Spacer()
+                
+                HStack(spacing: 4) {
+                    Image("googleicon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 12, height: 12)
+                    
+                    Text("Continue with Google")
+                        .font(.system(size: 16.5, weight: .medium))
+                        .foregroundColor(Color(red: 0.231, green: 0.231, blue: 0.231))
+                }
+                
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-            )
+            .frame(height: 44)
+            .background(Color.white)
+            .cornerRadius(23)
+            .padding(.horizontal, 20)
         }
     }
     
@@ -364,25 +372,6 @@ struct SecurityView: View {
         .frame(maxWidth: .infinity)
         .frame(height: 44)
         .cornerRadius(12)
-    }
-    
-    // Change Phone Number Button
-    private var changePhoneNavigationLink: some View {
-        NavigationLink(destination: ChangePhoneView()) {
-            HStack {
-                Image(systemName: "phone")
-                    .foregroundColor(.blue)
-                Text("Change Phone Number")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.blue)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.blue, lineWidth: 1)
-            )
-        }
     }
     
     

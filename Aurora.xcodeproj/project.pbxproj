@@ -20,19 +20,22 @@
 		FB23D5752CFE51C8003C245A /* ChangePhoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB23D5742CFE51C8003C245A /* ChangePhoneView.swift */; };
 		FB23D5792D0125CA003C245A /* SecurityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB23D5782D0125CA003C245A /* SecurityView.swift */; };
 		FB23D57D2D012600003C245A /* PrivacyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB23D57C2D012600003C245A /* PrivacyView.swift */; };
-		FB2CBDE52D32081400619A1A /* TermsOfServiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2CBDE42D32081400619A1A /* TermsOfServiceView.swift */; };
-		FB2CBDE72D32083D00619A1A /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2CBDE62D32083D00619A1A /* PrivacyPolicyView.swift */; };
+		FB2518FE2D5321F500FFB8AF /* SetUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2518FB2D5321F500FFB8AF /* SetUpView.swift */; };
+		FB2518FF2D5321F500FFB8AF /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2518F92D5321F500FFB8AF /* PrivacyPolicyView.swift */; };
+		FB2519002D5321F500FFB8AF /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2518F72D5321F500FFB8AF /* LoginView.swift */; };
+		FB2519012D5321F500FFB8AF /* PhoneVerificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2518F82D5321F500FFB8AF /* PhoneVerificationView.swift */; };
+		FB2519022D5321F500FFB8AF /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2518F62D5321F500FFB8AF /* LoadingView.swift */; };
+		FB2519032D5321F500FFB8AF /* ProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2518FA2D5321F500FFB8AF /* ProfileSetupView.swift */; };
+		FB2519042D5321F500FFB8AF /* TermsOfServiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2518FC2D5321F500FFB8AF /* TermsOfServiceView.swift */; };
 		FB3C61182CE0F497001A0922 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB3C61172CE0F497001A0922 /* CalendarView.swift */; };
 		FB42CB802CD5B5A000283244 /* FriendGroupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB42CB7F2CD5B5A000283244 /* FriendGroupView.swift */; };
 		FB42CB832CD66D9E00283244 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB42CB822CD66D9E00283244 /* EditProfileView.swift */; };
 		FB42CB882CD81DA000283244 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = FB42CB872CD81DA000283244 /* GoogleSignIn */; };
 		FB42CB8A2CD81DA000283244 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FB42CB892CD81DA000283244 /* GoogleSignInSwift */; };
-		FB54699F2D4D6B8000C81A3A /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB54699E2D4D6B8000C81A3A /* LoadingView.swift */; };
 		FB6764232CEE856400FCE17E /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = FB6764222CEE856400FCE17E /* Lottie */; };
 		FB6764292CEEE82D00FCE17E /* Clear Button.json in Resources */ = {isa = PBXBuildFile; fileRef = FB6764282CEEE82D00FCE17E /* Clear Button.json */; };
 		FB67642B2CEEE83E00FCE17E /* Save Button.json in Resources */ = {isa = PBXBuildFile; fileRef = FB67642A2CEEE83E00FCE17E /* Save Button.json */; };
 		FB7E20792CBCC6E900209582 /* AuroraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20782CBCC6E900209582 /* AuroraApp.swift */; };
-		FB7E207B2CBCC6E900209582 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E207A2CBCC6E900209582 /* LoginView.swift */; };
 		FB7E20802CBCC6EA00209582 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FB7E207F2CBCC6EA00209582 /* Preview Assets.xcassets */; };
 		FB7E208A2CBCC6EB00209582 /* AuroraTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20892CBCC6EB00209582 /* AuroraTests.swift */; };
 		FB7E20942CBCC6EB00209582 /* AuroraUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20932CBCC6EB00209582 /* AuroraUITests.swift */; };
@@ -48,12 +51,9 @@
 		FB7E20BE2CC15CAB00209582 /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20BD2CC15CAB00209582 /* ContactsView.swift */; };
 		FB7E20C12CC165E400209582 /* ChatUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20C02CC165E400209582 /* ChatUser.swift */; };
 		FB7E20C52CC565EA00209582 /* ChatLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20C42CC565EA00209582 /* ChatLogView.swift */; };
-		FB83BD942CD839A900A7BE4E /* SetUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB83BD932CD839A900A7BE4E /* SetUpView.swift */; };
 		FB83BD992CD85E6600A7BE4E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = FB83BD982CD85E6600A7BE4E /* GoogleService-Info.plist */; };
 		FB83BD9D2CD8656D00A7BE4E /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FB83BD9C2CD8656D00A7BE4E /* FirebaseMessaging */; };
 		FB83BDA02CD87CE200A7BE4E /* AddFriendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB83BD9F2CD87CE200A7BE4E /* AddFriendView.swift */; };
-		FB83BDA22CDACB5400A7BE4E /* PhoneVerificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB83BDA12CDACB5400A7BE4E /* PhoneVerificationView.swift */; };
-		FB83BDA42CDACB7500A7BE4E /* ProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB83BDA32CDACB7500A7BE4E /* ProfileSetupView.swift */; };
 		FBA6BD1D2CCD696F0019A5E1 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA6BD1C2CCD696F0019A5E1 /* ProfileView.swift */; };
 		FBA6BD1F2CCDA11E0019A5E1 /* FriendRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA6BD1E2CCDA11E0019A5E1 /* FriendRequestView.swift */; };
 		FBB259072D0C96B4004CC8CF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FBB259062D0C96B4004CC8CF /* Assets.xcassets */; };
@@ -86,17 +86,20 @@
 		FB23D5742CFE51C8003C245A /* ChangePhoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePhoneView.swift; sourceTree = "<group>"; };
 		FB23D5782D0125CA003C245A /* SecurityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityView.swift; sourceTree = "<group>"; };
 		FB23D57C2D012600003C245A /* PrivacyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyView.swift; sourceTree = "<group>"; };
-		FB2CBDE42D32081400619A1A /* TermsOfServiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermsOfServiceView.swift; sourceTree = "<group>"; };
-		FB2CBDE62D32083D00619A1A /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
+		FB2518F62D5321F500FFB8AF /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		FB2518F72D5321F500FFB8AF /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		FB2518F82D5321F500FFB8AF /* PhoneVerificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneVerificationView.swift; sourceTree = "<group>"; };
+		FB2518F92D5321F500FFB8AF /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
+		FB2518FA2D5321F500FFB8AF /* ProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupView.swift; sourceTree = "<group>"; };
+		FB2518FB2D5321F500FFB8AF /* SetUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetUpView.swift; sourceTree = "<group>"; };
+		FB2518FC2D5321F500FFB8AF /* TermsOfServiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermsOfServiceView.swift; sourceTree = "<group>"; };
 		FB3C61172CE0F497001A0922 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		FB42CB7F2CD5B5A000283244 /* FriendGroupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendGroupView.swift; sourceTree = "<group>"; };
 		FB42CB822CD66D9E00283244 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
-		FB54699E2D4D6B8000C81A3A /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
 		FB6764282CEEE82D00FCE17E /* Clear Button.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Clear Button.json"; sourceTree = "<group>"; };
 		FB67642A2CEEE83E00FCE17E /* Save Button.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Save Button.json"; sourceTree = "<group>"; };
 		FB7E20752CBCC6E900209582 /* Aurora.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aurora.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB7E20782CBCC6E900209582 /* AuroraApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuroraApp.swift; sourceTree = "<group>"; };
-		FB7E207A2CBCC6E900209582 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		FB7E207F2CBCC6EA00209582 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		FB7E20852CBCC6EB00209582 /* AuroraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuroraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB7E20892CBCC6EB00209582 /* AuroraTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuroraTests.swift; sourceTree = "<group>"; };
@@ -110,11 +113,8 @@
 		FB7E20C02CC165E400209582 /* ChatUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatUser.swift; sourceTree = "<group>"; };
 		FB7E20C42CC565EA00209582 /* ChatLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogView.swift; sourceTree = "<group>"; };
 		FB83BD902CD81ECC00A7BE4E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		FB83BD932CD839A900A7BE4E /* SetUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetUpView.swift; sourceTree = "<group>"; };
 		FB83BD982CD85E6600A7BE4E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		FB83BD9F2CD87CE200A7BE4E /* AddFriendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriendView.swift; sourceTree = "<group>"; };
-		FB83BDA12CDACB5400A7BE4E /* PhoneVerificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneVerificationView.swift; sourceTree = "<group>"; };
-		FB83BDA32CDACB7500A7BE4E /* ProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupView.swift; sourceTree = "<group>"; };
 		FBA6BD1C2CCD696F0019A5E1 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		FBA6BD1E2CCDA11E0019A5E1 /* FriendRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendRequestView.swift; sourceTree = "<group>"; };
 		FBB259052D09132D004CC8CF /* Aurora.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Aurora.entitlements; sourceTree = "<group>"; };
@@ -204,6 +204,20 @@
 			path = PrivacyView;
 			sourceTree = "<group>";
 		};
+		FB2518FD2D5321F500FFB8AF /* Login Process */ = {
+			isa = PBXGroup;
+			children = (
+				FB2518F62D5321F500FFB8AF /* LoadingView.swift */,
+				FB2518F72D5321F500FFB8AF /* LoginView.swift */,
+				FB2518F82D5321F500FFB8AF /* PhoneVerificationView.swift */,
+				FB2518F92D5321F500FFB8AF /* PrivacyPolicyView.swift */,
+				FB2518FA2D5321F500FFB8AF /* ProfileSetupView.swift */,
+				FB2518FB2D5321F500FFB8AF /* SetUpView.swift */,
+				FB2518FC2D5321F500FFB8AF /* TermsOfServiceView.swift */,
+			);
+			path = "Login Process";
+			sourceTree = "<group>";
+		};
 		FB3C61162CE0F479001A0922 /* CalenarView */ = {
 			isa = PBXGroup;
 			children = (
@@ -258,7 +272,7 @@
 				FB83BD902CD81ECC00A7BE4E /* Info.plist */,
 				FBB259052D09132D004CC8CF /* Aurora.entitlements */,
 				FB0F8AFA2CF52ABE00A37CED /* TutorialView.swift */,
-				FBB505022CCEA62D00FF1C87 /* Login Process */,
+				FB2518FD2D5321F500FFB8AF /* Login Process */,
 				FB23D55B2CF76C00003C245A /* CustomTabView */,
 				FB7E20B32CBF23B200209582 /* MainMessages */,
 				FB23D55A2CF76BC9003C245A /* SelfProfileView */,
@@ -367,20 +381,6 @@
 				FBA6BD1E2CCDA11E0019A5E1 /* FriendRequestView.swift */,
 			);
 			path = FriendRequestsView;
-			sourceTree = "<group>";
-		};
-		FBB505022CCEA62D00FF1C87 /* Login Process */ = {
-			isa = PBXGroup;
-			children = (
-				FB7E207A2CBCC6E900209582 /* LoginView.swift */,
-				FB83BD932CD839A900A7BE4E /* SetUpView.swift */,
-				FB83BDA12CDACB5400A7BE4E /* PhoneVerificationView.swift */,
-				FB83BDA32CDACB7500A7BE4E /* ProfileSetupView.swift */,
-				FB2CBDE42D32081400619A1A /* TermsOfServiceView.swift */,
-				FB2CBDE62D32083D00619A1A /* PrivacyPolicyView.swift */,
-				FB54699E2D4D6B8000C81A3A /* LoadingView.swift */,
-			);
-			path = "Login Process";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -548,26 +548,26 @@
 				FB7E20C12CC165E400209582 /* ChatUser.swift in Sources */,
 				FBA6BD1D2CCD696F0019A5E1 /* ProfileView.swift in Sources */,
 				FB7E20C52CC565EA00209582 /* ChatLogView.swift in Sources */,
-				FB2CBDE52D32081400619A1A /* TermsOfServiceView.swift in Sources */,
+				FB2518FE2D5321F500FFB8AF /* SetUpView.swift in Sources */,
+				FB2518FF2D5321F500FFB8AF /* PrivacyPolicyView.swift in Sources */,
+				FB2519002D5321F500FFB8AF /* LoginView.swift in Sources */,
+				FB2519012D5321F500FFB8AF /* PhoneVerificationView.swift in Sources */,
+				FB2519022D5321F500FFB8AF /* LoadingView.swift in Sources */,
+				FB2519032D5321F500FFB8AF /* ProfileSetupView.swift in Sources */,
+				FB2519042D5321F500FFB8AF /* TermsOfServiceView.swift in Sources */,
 				FB23D5592CF6B20D003C245A /* SelfProfileView.swift in Sources */,
 				FB7E20AE2CBEAFC900209582 /* ImagePicker.swift in Sources */,
 				FB7E20B52CBF23CC00209582 /* MainMessagesView.swift in Sources */,
 				FB7E20B82CC0114600209582 /* FirebaseManager.swift in Sources */,
 				FBA6BD1F2CCDA11E0019A5E1 /* FriendRequestView.swift in Sources */,
-				FB83BDA42CDACB7500A7BE4E /* ProfileSetupView.swift in Sources */,
-				FB2CBDE72D32083D00619A1A /* PrivacyPolicyView.swift in Sources */,
 				FB23D5792D0125CA003C245A /* SecurityView.swift in Sources */,
-				FB83BD942CD839A900A7BE4E /* SetUpView.swift in Sources */,
 				FB23D56F2CFBB59E003C245A /* ChangeEmailView.swift in Sources */,
 				FB23D5712CFD52A8003C245A /* Scratch.swift in Sources */,
 				FB83BDA02CD87CE200A7BE4E /* AddFriendView.swift in Sources */,
 				FB0F8AFF2CF653E200A37CED /* CustomTabNavigationView.swift in Sources */,
 				FB7E20BE2CC15CAB00209582 /* ContactsView.swift in Sources */,
 				FB42CB832CD66D9E00283244 /* EditProfileView.swift in Sources */,
-				FB7E207B2CBCC6E900209582 /* LoginView.swift in Sources */,
-				FB54699F2D4D6B8000C81A3A /* LoadingView.swift in Sources */,
 				FB23D5752CFE51C8003C245A /* ChangePhoneView.swift in Sources */,
-				FB83BDA22CDACB5400A7BE4E /* PhoneVerificationView.swift in Sources */,
 				FB7E20792CBCC6E900209582 /* AuroraApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

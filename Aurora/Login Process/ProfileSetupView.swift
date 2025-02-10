@@ -19,6 +19,7 @@ struct ProfileSetupView: View {
     @AppStorage("SeenTutorial") private var SeenTutorial: Bool = false
     @AppStorage("isLoggedIn") private var isLoggedIn: Bool = false
     @FocusState private var focusItem: Bool
+    @State private var isLoading: Bool = false
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -33,101 +34,115 @@ struct ProfileSetupView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    Spacer()
-                        .frame(height: 49)
-                    
-                    Text("")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
-                    Text("Complete Your Profile")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
-                    
-                    Text("Add a profile picture and select a username to continue.")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
-                        .padding(.bottom, 4)
-                }
-                .padding()
-                
-                VStack{
-                    
-                    Button {
-                        showImagePicker.toggle()
-                        generateHapticFeedbackMedium()
-                    } label: {
-                        VStack {
-                            if let image = self.image {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 128, height: 128)
-                                    .cornerRadius(64)
-                            } else {
-                                Image("imagepickerpicture")
-                                    .frame(width: 132, height: 132)
-                                    .padding()
-                            }
-                        }
+        if isLoggedIn && SeenTutorial{
+            CustomTabNavigationView()
+        }
+        else if isLoggedIn && !SeenTutorial{
+            TutorialView()
+        }
+        else{
+            NavigationView {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Spacer()
+                            .frame(height: 49)
+                        
+                        Text("")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
+                        Text("Complete Your Profile")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
+                        
+                        Text("Add a profile picture and select a username to continue.")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
+                            .padding(.bottom, 4)
                     }
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    TextField("Enter your username", text: $username)
-                        .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
-                        .padding(.horizontal, 16)
-                        .focused($focusItem)
-                        .toolbar {
-                            if focusItem {  // Only show when keyboard is visible
-                                ToolbarItemGroup(placement: .confirmationAction) {
-                                    Spacer()
-                                    Button {
-                                        focusItem = false
-                                    } label: {
-                                        Text("Done")
-                                            .fontWeight(.bold)
-                                            .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
-                                            .font(.system(size: 17))
-                                    }
+                    .padding()
+                    
+                    VStack{
+                        
+                        Button {
+                            showImagePicker.toggle()
+                            generateHapticFeedbackMedium()
+                        } label: {
+                            VStack {
+                                if let image = self.image {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 128, height: 128)
+                                        .cornerRadius(64)
+                                } else {
+                                    Image("imagepickerpicture")
+                                        .frame(width: 132, height: 132)
+                                        .padding()
                                 }
                             }
                         }
-                        .frame(height: 48)
-                        .background(Color.white)
-                        .cornerRadius(100)
-                    
-                    Button {
-                        validateAndPersistUserProfile()
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Image(image == nil || username.isEmpty ? "continuebuttonunpressed" : "continuebutton")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: UIScreen.main.bounds.width - 80)
-                            Spacer()
-                        }
                     }
-                    .disabled(image == nil || username.isEmpty)
-                    .opacity((image == nil || username.isEmpty) ? 0.6 : 1)
+                    VStack(alignment: .leading, spacing: 8) {
+                        TextField("Enter your username", text: $username)
+                            .foregroundColor(Color(red: 86/255, green: 86/255, blue: 86/255))
+                            .padding(.horizontal, 16)
+                            .focused($focusItem)
+                            .toolbar {
+                                if focusItem {  // Only show when keyboard is visible
+                                    ToolbarItemGroup(placement: .confirmationAction) {
+                                        Spacer()
+                                        Button {
+                                            focusItem = false
+                                        } label: {
+                                            Text("Done")
+                                                .fontWeight(.bold)
+                                                .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
+                                                .font(.system(size: 17))
+                                        }
+                                    }
+                                }
+                            }
+                            .frame(height: 48)
+                            .background(Color.white)
+                            .cornerRadius(100)
+                        
+                        Button {
+                            validateAndPersistUserProfile()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Image(image == nil || username.isEmpty ? "continuebuttonunpressed" : "continuebutton")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: UIScreen.main.bounds.width - 80)
+                                Spacer()
+                            }
+                        }
+                        .disabled(image == nil || username.isEmpty)
+                        .opacity((image == nil || username.isEmpty) ? 0.6 : 1)
+                        
+                        
+                    }
+                    .padding()
+                    
+                    if isLoading{
+                        ProgressView()
+                    }
                 }
-                .padding()
+                .navigationBarItems(leading:
+                                        Button {
+                    dismiss()
+                } label: {
+                    Text("Cancel")
+                        .fontWeight(.bold)  // Changed from .bold since it's a cancel button
+                        .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
+                        .font(.system(size: 17))
+                })
+                .background(Color(.init(white: 0, alpha: 0.05)).ignoresSafeArea())
             }
-            .navigationBarItems(leading:
-                                    Button {
-                dismiss()
-            } label: {
-                Text("Cancel")
-                    .fontWeight(.bold)  // Changed from .bold since it's a cancel button
-                    .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
-                    .font(.system(size: 17))
-            })
-            .background(Color(.init(white: 0, alpha: 0.05)).ignoresSafeArea())
-        }
-        .fullScreenCover(isPresented: $showImagePicker) {
-            ImagePicker(image: $image)
+            .fullScreenCover(isPresented: $showImagePicker) {
+                ImagePicker(image: $image)
+            }
         }
     }
     
@@ -137,6 +152,7 @@ struct ProfileSetupView: View {
             statusMessage = "Username cannot be empty"
             return
         }
+        isLoading = true
         handleImage()
     }
     
@@ -151,13 +167,13 @@ struct ProfileSetupView: View {
         guard let imageData = image.jpegData(compressionQuality: 0.5) else { return }
         
         ref.putData(imageData, metadata: nil) { metadata, err in
-            if let err = err {
+            if err != nil {
                 self.statusMessage = "We couldn't upload your profile picture. Please check your internet connection and try again."
                 return
             }
             
             ref.downloadURL { url, err in
-                if let err = err {
+                if err != nil {
                     self.statusMessage = "We couldn't process your profile picture. Please try again or choose a different image."
                     return
                 }
@@ -178,7 +194,7 @@ struct ProfileSetupView: View {
         ]
         FirebaseManager.shared.firestore.collection("users")
             .document(uid).setData(userData) { err in
-                if let err = err {
+                if err != nil {
                     self.statusMessage = "We couldn't save your profile information. Please check your internet connection."
                     return
                 }
@@ -187,7 +203,6 @@ struct ProfileSetupView: View {
                 
                 self.isLogin = true
                 isLoggedIn = true
-                dismiss()
             }
     }
     
@@ -199,12 +214,14 @@ struct ProfileSetupView: View {
             .document("profile")
         
         userRef.setData(["username": username], merge: true) { error in
-            if let error = error {
+            if error != nil {
                 self.statusMessage = "We couldn't save your profile information. Please check your internet connection."
             } else {
                 print("Saving username to basic information successfully")
             }
         }
+        isLoggedIn = true
+        isLoading = false
     }
 }
 

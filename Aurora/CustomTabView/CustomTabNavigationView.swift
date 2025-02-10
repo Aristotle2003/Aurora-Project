@@ -8,8 +8,10 @@ class CustomTabNavigationViewModel: ObservableObject {
     var likesListener: ListenerRegistration?
     @AppStorage("lastCheckedTimestamp") var lastCheckedTimestamp: Double = 0
     @AppStorage("lastLikesCount") var lastLikesCount: Int = 0
+    @AppStorage("isLoggedIn") private var isLoggedIn: Bool = false
     @Published var hasNewPost = false
     @Published var hasNewLike = false
+    @Published var navigateToLoginView = false
 
     init() {
         fetchCurrentUser()
@@ -234,6 +236,9 @@ struct CustomTabNavigationView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
+        .fullScreenCover(isPresented: $vm.navigateToLoginView){
+            LoginView()
+        }
         
         .onAppear{
             vm.fetchAndStoreFCMToken()

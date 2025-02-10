@@ -144,7 +144,7 @@ class AddFriendViewModel: ObservableObject {
                 // Flatten into a single filtered list when searching
                 let query = self.searchText.lowercased()
                 self.randomUsers = self.allUsers.filter { user in
-                    user.email.lowercased().contains(query) || user.phoneNumber.contains(query)
+                    user.email.lowercased().contains(query) || user.phoneNumber.contains(query) || user.username.lowercased().contains(query)
                 }
                 // Keep Recommended Users intact during search
                 self.recommendedUsers.removeAll()
@@ -312,7 +312,7 @@ struct AddFriendView: View {
                         .padding(.leading, 20)
                         
                         HStack{
-                            Text("Contacts Active on Aurora")
+                            Text("Friends of Friends")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(Color(.gray))
                                 .padding(.leading, 16)
@@ -569,7 +569,7 @@ struct SearchBarforAddFriend: View {
                 .foregroundColor(.gray)
             
             // Search input field
-            TextField("Search friends by phone or email", text: $text)
+            TextField("Search friends by username, phone, or email", text: $text)
                 .font(.system(size: 14)) // Set font size
                 .foregroundColor(.gray)
                 .submitLabel(.search) // Enable "Search" key on keyboard
