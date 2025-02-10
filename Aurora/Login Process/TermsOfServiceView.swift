@@ -252,8 +252,13 @@ Email: aurora888borealis888@gmail.com
             .navigationBarTitle("Terms of Service", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Text("Close")
+                            .fontWeight(.bold)  // Changed from .bold since it's a cancel button
+                            .foregroundColor(Color(red: 125/255, green: 133/255, blue: 191/255))
+                            .font(.system(size: 17))
                     }
                 }
             }

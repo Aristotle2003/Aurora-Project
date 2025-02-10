@@ -14,6 +14,7 @@ struct LoginView: View {
     
     @State private var isPostEmailVerification = false
     @State private var isPreEmailVerification = false
+    @State private var showProfileSetup = false
     
     @State private var uid = ""
     @State private var email = ""
@@ -230,18 +231,29 @@ struct LoginView: View {
                     email: ""
                 )
             }
-            // Phone verification after google or apple
-            .fullScreenCover(isPresented: $isPostEmailVerification) {
+            .fullScreenCover(isPresented: $showProfileSetup) {
                 if let user = FirebaseManager.shared.auth.currentUser {
-                    PhoneVerificationView(
+                    ProfileSetupView(
                         isLogin: $isLogin,
-                        hasSeenTutorial: $hasSeenTutorial,
-                        isPreEmailVerification: false,
-                        oldPhone: "",
-                        email: user.email
+                        uid: user.uid,
+                        phone: "",
+                        email: user.email ?? ""
                     )
                 }
             }
+//
+//            // Phone verification after google or apple
+//            .fullScreenCover(isPresented: $isPostEmailVerification) {
+//                if let user = FirebaseManager.shared.auth.currentUser {
+//                    PhoneVerificationView(
+//                        isLogin: $isLogin,
+//                        hasSeenTutorial: $hasSeenTutorial,
+//                        isPreEmailVerification: false,
+//                        oldPhone: "",
+//                        email: user.email
+//                    )
+//                }
+//            }
             .fullScreenCover(isPresented: $showTermsOfService) {
                 TermsOfServiceView()
             }
@@ -401,7 +413,7 @@ struct LoginView: View {
                             self.isLoggedIn = true
                         // New user set up profile
                         } else {
-                            self.isPostEmailVerification = true
+                            self.showProfileSetup = true
                         }
                     }
             }
@@ -452,7 +464,7 @@ struct LoginView: View {
                             self.isLoggedIn = true
                         // New user set up profile
                         } else {
-                            self.isPostEmailVerification = true
+                            self.showProfileSetup = true
                         }
                     }
             }
@@ -526,8 +538,6 @@ extension EnvironmentValues {
         return scene.windows.first
     }
 }
-
-
 
 
 #Preview {

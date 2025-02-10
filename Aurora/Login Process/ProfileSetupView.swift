@@ -99,8 +99,6 @@ struct ProfileSetupView: View {
                         .cornerRadius(100)
                     
                     Button {
-                        // Cover
-                        LoadingManager.shared.show()
                         validateAndPersistUserProfile()
                     } label: {
                         HStack {
@@ -136,8 +134,6 @@ struct ProfileSetupView: View {
     
     private func validateAndPersistUserProfile() {
         guard !username.isEmpty else {
-            // Cover
-            LoadingManager.shared.hide()
             statusMessage = "Username cannot be empty"
             return
         }
@@ -147,8 +143,6 @@ struct ProfileSetupView: View {
     
     private func handleImage() {
         guard let image = self.image else {
-            // Cover
-            LoadingManager.shared.hide()
             statusMessage = "Please select a profile picture"
             return
         }
@@ -158,16 +152,12 @@ struct ProfileSetupView: View {
         
         ref.putData(imageData, metadata: nil) { metadata, err in
             if let err = err {
-                // Cover
-                LoadingManager.shared.hide()
                 self.statusMessage = "We couldn't upload your profile picture. Please check your internet connection and try again."
                 return
             }
             
             ref.downloadURL { url, err in
                 if let err = err {
-                    // Cover
-                    LoadingManager.shared.hide()
                     self.statusMessage = "We couldn't process your profile picture. Please try again or choose a different image."
                     return
                 }
@@ -189,7 +179,6 @@ struct ProfileSetupView: View {
         FirebaseManager.shared.firestore.collection("users")
             .document(uid).setData(userData) { err in
                 if let err = err {
-                    LoadingManager.shared.hide()
                     self.statusMessage = "We couldn't save your profile information. Please check your internet connection."
                     return
                 }
@@ -198,7 +187,6 @@ struct ProfileSetupView: View {
                 
                 self.isLogin = true
                 isLoggedIn = true
-                LoadingManager.shared.show()
                 dismiss()
             }
     }
@@ -212,7 +200,6 @@ struct ProfileSetupView: View {
         
         userRef.setData(["username": username], merge: true) { error in
             if let error = error {
-                LoadingManager.shared.hide()
                 self.statusMessage = "We couldn't save your profile information. Please check your internet connection."
             } else {
                 print("Saving username to basic information successfully")
