@@ -34,11 +34,8 @@ struct ProfileSetupView: View {
     }
     
     var body: some View {
-        if isLoggedIn && SeenTutorial{
+        if isLoggedIn{
             CustomTabNavigationView()
-        }
-        else if isLoggedIn && !SeenTutorial{
-            TutorialView()
         }
         else{
             NavigationView {

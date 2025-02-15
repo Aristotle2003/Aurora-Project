@@ -55,11 +55,8 @@ struct LoginView: View {
     
     
     var body: some View {
-        if isLoggedIn && SeenTutorial{
+        if isLoggedIn {
             CustomTabNavigationView()
-        }
-        else if isLoggedIn && !SeenTutorial{
-            TutorialView()
         }
         else{
             NavigationView {
@@ -414,9 +411,8 @@ struct LoginView: View {
                         }
                         // User exists
                         if (snapshot?.data()) != nil {
-                            checkTutorialStatus()
                             self.isLogin = true
-                            
+                            isLoggedIn = true
                         // New user set up profile
                         } else {
                             self.showProfileSetup = true
@@ -465,8 +461,8 @@ struct LoginView: View {
                         
                         // User exists
                         if (snapshot?.data()) != nil {
-                            checkTutorialStatus()
                             self.isLogin = true
+                            isLoggedIn = true
                         // New user set up profile
                         } else {
                             self.showProfileSetup = true
@@ -474,34 +470,6 @@ struct LoginView: View {
                     }
             }
         }
-    }
-    
-    private func checkTutorialStatus() {
-        guard let uid = FirebaseManager.shared.auth.currentUser?.uid else { return }
-        self.isLoading = true
-        
-        
-        FirebaseManager.shared.firestore
-            .collection("users")
-            .document(uid)
-            .getDocument { snapshot, error in
-                if let error = error {
-                    print("Failed to fetch tutorial status: \(error)")
-                    hasSeenTutorial = false
-                    SeenTutorial = false
-                    self.isLoggedIn = false
-                } else if let data = snapshot?.data(), let seen = data["seen_tutorial"] as? Bool {
-                    hasSeenTutorial = seen
-                    SeenTutorial = seen
-                    self.isLoggedIn = true
-                    isLoading = false
-                } else {
-                    hasSeenTutorial = false
-                    SeenTutorial = false
-                    self.isLoggedIn = true
-                    isLoading = false
-                }
-            }
     }
     
     private func randomNonceString(length: Int = 32) -> String {

@@ -237,6 +237,7 @@ private func fetchFriendRequestDetails() {
                                 // Remove from friendRequests list
                                 self.friendRequests.removeAll { $0.documentId == request.documentId }
                             }
+                        
                     }
             }
     }

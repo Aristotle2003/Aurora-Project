@@ -510,10 +510,8 @@ struct PhoneVerificationView: View {
                 
                 // User exists
                 if snapshot?.exists == true {
-                    checkTutorialStatus()
                     isLogin = true
                     self.isLoggedIn = true
-                    self.dismiss()
                 } else {
                     // User doesn't exist, choose profile
                     self.showProfileSetup = true
