@@ -1237,6 +1237,8 @@ struct ResponseCard: View {
                         TextField(replyComment == nil ? "Add a comment..." : "Reply to \(replyComment!.userName)...", text: $newCommentText)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             // .padding(.horizontal)
+                            .foregroundColor(Color.gray) // 设置输入文字颜色为灰色
+                            .accentColor(Color.gray) // 设置光标颜色为灰色
                             .focused($isFocused)
                             .onAppear {
                                 isFocused = true // 聚焦输入框

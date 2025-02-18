@@ -102,6 +102,8 @@ class ChatLogViewModel: ObservableObject {
                             }
                             print("Successfully uploaded image, URL: \(url.absoluteString)")
                             self.storeImageUrlInFirestore(imageUrl: url)
+                            self.updateFriendLatestMessageTimestampForSelf(friendId: toId)
+                            self.updateFriendLatestMessageTimestampForRecipient(friendId: toId)
                         }
                     }
                 }
@@ -538,6 +540,29 @@ class ChatLogViewModel: ObservableObject {
         
         // Update `hasUnseenLatestMessage` to false
         friendRef.updateData(["hasUnseenLatestMessage": false]) { error in
+            if let error = error {
+                print("Failed to update hasUnseenLatestMessage: \(error)")
+                return
+            }
+            print("Successfully updated hasUnseenLatestMessage to false")
+        }
+    }
+    
+    func markMessageAsUnseen(for userId: String) {
+        guard let currentUserId = FirebaseManager.shared.auth.currentUser?.uid else {
+            self.errorMessage = "Could not find firebase uid"
+            return
+        }
+        
+        // Reference to the user's friend list
+        let friendRef = FirebaseManager.shared.firestore
+            .collection("friends")
+            .document(currentUserId)
+            .collection("friend_list")
+            .document(userId)
+        
+        // Update `hasUnseenLatestMessage` to false
+        friendRef.updateData(["hasUnseenLatestMessage": true]) { error in
             if let error = error {
                 print("Failed to update hasUnseenLatestMessage: \(error)")
                 return

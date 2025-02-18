@@ -153,34 +153,34 @@ struct FriendRequestsView: View {
             }
     }
 
-private func fetchFriendRequestDetails() {
-    for (index, request) in friendRequests.enumerated() {
-        FirebaseManager.shared.firestore
-            .collection("users")
-            .document(request.fromId)
-            .getDocument { snapshot, error in
-                if let error = error {
-                    self.errorMessage = "Failed to fetch user info: \(error)"
-                    print("Error fetching user info:", error)
-                    return
+    private func fetchFriendRequestDetails() {
+        for (index, request) in friendRequests.enumerated() {
+            FirebaseManager.shared.firestore
+                .collection("users")
+                .document(request.fromId)
+                .getDocument { snapshot, error in
+                    if let error = error {
+                        self.errorMessage = "Failed to fetch user info: \(error)"
+                        print("Error fetching user info:", error)
+                        return
+                    }
+
+                    guard let data = snapshot?.data() else {
+                        self.errorMessage = "No user data found"
+                        print("No user data found for UID \(request.fromId)")
+                        return
+                    }
+
+                    let username = data["username"] as? String ?? ""
+                    let fromEmail = data["email"] as? String ?? ""
+                    let profileImageUrl = data["profileImageUrl"] as? String ?? ""
+
+                    self.friendRequests[index].username = username
+                    self.friendRequests[index].fromEmail = fromEmail
+                    self.friendRequests[index].profileImageUrl = profileImageUrl
                 }
-
-                guard let data = snapshot?.data() else {
-                    self.errorMessage = "No user data found"
-                    print("No user data found for UID \(request.fromId)")
-                    return
-                }
-
-                let username = data["username"] as? String ?? ""
-                let fromEmail = data["email"] as? String ?? ""
-                let profileImageUrl = data["profileImageUrl"] as? String ?? ""
-
-                self.friendRequests[index].username = username
-                self.friendRequests[index].fromEmail = fromEmail
-                self.friendRequests[index].profileImageUrl = profileImageUrl
-            }
+        }
     }
-}
 
     // Accept friend request
     private func acceptFriendRequest(_ request: FriendRequest) {
@@ -201,7 +201,8 @@ private func fetchFriendRequestDetails() {
                     "uid": request.fromId,
                     "email": request.fromEmail,
                     "profileImageUrl": request.profileImageUrl,
-                    "username": request.username
+                    "username": request.username,
+                    "latestMessageTimestamp": Timestamp()
                 ]
 
                 FirebaseManager.shared.firestore
@@ -220,7 +221,8 @@ private func fetchFriendRequestDetails() {
                             "uid": currentUser.uid,
                             "email": currentUser.email,
                             "profileImageUrl": currentUser.profileImageUrl,
-                            "username": currentUser.username
+                            "username": currentUser.username,
+                            "latestMessageTimestamp": Timestamp()
                         ]
 
                         FirebaseManager.shared.firestore
