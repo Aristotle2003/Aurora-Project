@@ -198,7 +198,7 @@ struct AddFriendView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject var vm = AddFriendViewModel()
     @State private var isSharing = false
-    let shareableURL = URL(string: "hhttps://testflight.apple.com/join/khW4S7Rb")!
+    let shareableURL = URL(string: "https://apps.apple.com/us/app/aurora/id6740733827")!
     @StateObject private var chatLogViewModel = ChatLogViewModel(chatUser: nil)
     @State private var chatUser: ChatUser? = nil
     @State private var navigateToProfile = false
