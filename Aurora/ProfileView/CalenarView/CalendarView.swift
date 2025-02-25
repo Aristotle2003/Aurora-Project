@@ -113,7 +113,8 @@ struct CalendarMessagesView: View {
                 Spacer()
                     .frame(height: 30)
                 
-                CalendarView(selectedDate: $selectedDate)
+                CalendarView(selectedDate: $selectedDate,
+                             savedDates: Set(messagesViewModel.messagesByDate.keys))
     
                 
                 // Edit Button
@@ -230,6 +231,7 @@ struct CalendarMessagesView: View {
 
 struct CalendarView: View {
     @Binding public var selectedDate: Date?
+    let savedDates: Set<Date>
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -243,9 +245,10 @@ struct CalendarView: View {
         generator.impactOccurred()
     }
     
-    public init(selectedDate: Binding<Date?>) {
-            self._selectedDate = selectedDate
-        }
+    public init(selectedDate: Binding<Date?>, savedDates: Set<Date>) {
+        self._selectedDate = selectedDate
+        self.savedDates = savedDates
+    }
     
     @State private var currentMonth: Date = {
         let calendar = Calendar.current
@@ -325,10 +328,20 @@ struct CalendarView: View {
                             selectedDate = day
                             generateHapticFeedbackMedium()
                         }) {
-                            Text("\(calendar.component(.day, from: day))")
+                            let dayNumber = calendar.component(.day, from: day)
+                            let backgroundColor: Color = {
+                                if let selected = selectedDate, calendar.isDate(selected, inSameDayAs: day) {
+                                    return Color(red: 229/255, green: 232/255, blue: 254/255)
+                                } else if savedDates.contains(day) {
+                                    return Color.yellow.opacity(0.3)
+                                } else {
+                                    return Color.clear
+                                }
+                            }()
+                            Text("\(dayNumber)")
                                 .foregroundColor(Color(red: 125 / 255, green: 133 / 255, blue: 191 / 255))
                                 .frame(maxWidth: .infinity, minHeight: 40)
-                                .background(selectedDate == day ? Color(red: 229 / 255, green: 232 / 255, blue: 254 / 255) : Color.clear)
+                                .background(backgroundColor)
                                 .cornerRadius(10)
                         }
                     } else {

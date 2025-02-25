@@ -56,6 +56,7 @@
 		FB83BDA02CD87CE200A7BE4E /* AddFriendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB83BD9F2CD87CE200A7BE4E /* AddFriendView.swift */; };
 		FBA6BD1D2CCD696F0019A5E1 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA6BD1C2CCD696F0019A5E1 /* ProfileView.swift */; };
 		FBA6BD1F2CCDA11E0019A5E1 /* FriendRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA6BD1E2CCDA11E0019A5E1 /* FriendRequestView.swift */; };
+		FBA977F52D6B8400004BB2E1 /* GamesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA977F42D6B8400004BB2E1 /* GamesView.swift */; };
 		FBB259072D0C96B4004CC8CF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FBB259062D0C96B4004CC8CF /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -117,6 +118,7 @@
 		FB83BD9F2CD87CE200A7BE4E /* AddFriendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriendView.swift; sourceTree = "<group>"; };
 		FBA6BD1C2CCD696F0019A5E1 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		FBA6BD1E2CCDA11E0019A5E1 /* FriendRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendRequestView.swift; sourceTree = "<group>"; };
+		FBA977F42D6B8400004BB2E1 /* GamesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamesView.swift; sourceTree = "<group>"; };
 		FBB259052D09132D004CC8CF /* Aurora.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Aurora.entitlements; sourceTree = "<group>"; };
 		FBB259062D0C96B4004CC8CF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -354,6 +356,7 @@
 			isa = PBXGroup;
 			children = (
 				FB7E20C42CC565EA00209582 /* ChatLogView.swift */,
+				FBA977F82D6D6BB1004BB2E1 /* Games */,
 			);
 			path = ChatLogView;
 			sourceTree = "<group>";
@@ -364,6 +367,14 @@
 				FB83BD9F2CD87CE200A7BE4E /* AddFriendView.swift */,
 			);
 			path = AddFriendView;
+			sourceTree = "<group>";
+		};
+		FBA977F82D6D6BB1004BB2E1 /* Games */ = {
+			isa = PBXGroup;
+			children = (
+				FBA977F42D6B8400004BB2E1 /* GamesView.swift */,
+			);
+			path = Games;
 			sourceTree = "<group>";
 		};
 		FBB505002CCEA5DF00FF1C87 /* ProfileView */ = {
@@ -554,6 +565,7 @@
 				FB2519012D5321F500FFB8AF /* PhoneVerificationView.swift in Sources */,
 				FB2519022D5321F500FFB8AF /* LoadingView.swift in Sources */,
 				FB2519032D5321F500FFB8AF /* ProfileSetupView.swift in Sources */,
+				FBA977F52D6B8400004BB2E1 /* GamesView.swift in Sources */,
 				FB2519042D5321F500FFB8AF /* TermsOfServiceView.swift in Sources */,
 				FB23D5592CF6B20D003C245A /* SelfProfileView.swift in Sources */,
 				FB7E20AE2CBEAFC900209582 /* ImagePicker.swift in Sources */,

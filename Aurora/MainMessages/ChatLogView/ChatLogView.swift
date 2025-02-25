@@ -790,6 +790,7 @@ struct ChatLogView: View {
     @State private var showImageViewer = false
     @State private var currentImageIndex = 0
     @State private var showCameraPicker = false
+    @State private var showGamesSheet = false
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -1187,7 +1188,20 @@ struct ChatLogView: View {
                                                 }
                                         }
                                         
-                                        
+                                        Button(action: {
+                                                showGamesSheet = true
+                                                generateHapticFeedbackMedium()
+                                            }) {
+                                                Image(systemName: "gamecontroller.fill")
+                                                    .frame(width: 26, height: 26)
+                                                    .padding(.horizontal, 1)
+                                                    .foregroundColor(Color(red: 194/255.0, green: 196/255.0, blue: 240/255.0))
+                                            }
+                                            .sheet(isPresented: $showGamesSheet) {
+                                                // Assuming you have a function getCurrentUser() that returns a ChatUser
+                                                GameSelectionView(currentUser: getCurrentUser(), opponentUser: vm.chatUser ?? ChatUser(data: [:]))
+                                                
+                                            }
                                         
                                         if !vm.chatText.isEmpty {
                                             Button(action: {
