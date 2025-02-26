@@ -111,6 +111,7 @@ class CreateNewMessageViewModel: ObservableObject {
 struct CreateNewMessageView: View {
     @StateObject private var vm = CreateNewMessageViewModel()
     @State private var isShowingAddFriendView = false
+    @State private var isShowingCreateGroupChatView = false // New state variable
     @State private var navigateToProfile = false
     @State private var chatUser: ChatUser? = nil
     @State private var currentUser: ChatUser? = nil
@@ -154,6 +155,10 @@ struct CreateNewMessageView: View {
             .fullScreenCover(isPresented: $isShowingAddFriendView) {
                 AddFriendView()
             }
+            // Full screen cover for group chat creation
+            .fullScreenCover(isPresented: $isShowingCreateGroupChatView) {
+                CreateGroupView()
+            }
             .navigationDestination(isPresented: $navigateToProfile) {
                 if let chatUser = self.chatUser, let currentUser = self.currentUser {
                     ProfileView(
@@ -189,10 +194,16 @@ struct CreateNewMessageView: View {
                 .aspectRatio(nil, contentMode: .fill)
                 .ignoresSafeArea()
             HStack {
-                Image("spacerformainmessageviewtopleft")
-                    .resizable()
-                    .frame(width: 24, height: 24)
-                    .padding(.leading, 28)
+                // Left side: Group Chat Button
+                Button(action: {
+                    isShowingCreateGroupChatView = true
+                    generateHapticFeedbackMedium()
+                }) {
+                    Image("creategroupbutton")
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                        .padding(.leading, 28)
+                }
                 Spacer()
                 Image("contactsheadlinetext")
                     .resizable()
@@ -323,7 +334,6 @@ struct CreateNewMessageView: View {
         }
     }
 }
-
 
 struct SearchBar: View {
     @Binding var text: String

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -48,12 +48,10 @@
 		FB7E20B52CBF23CC00209582 /* MainMessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20B42CBF23CB00209582 /* MainMessagesView.swift */; };
 		FB7E20B82CC0114600209582 /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20B72CC0114600209582 /* FirebaseManager.swift */; };
 		FB7E20BB2CC017BC00209582 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = FB7E20BA2CC017BC00209582 /* SDWebImageSwiftUI */; };
-		FB7E20BE2CC15CAB00209582 /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20BD2CC15CAB00209582 /* ContactsView.swift */; };
 		FB7E20C12CC165E400209582 /* ChatUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20C02CC165E400209582 /* ChatUser.swift */; };
 		FB7E20C52CC565EA00209582 /* ChatLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7E20C42CC565EA00209582 /* ChatLogView.swift */; };
 		FB83BD992CD85E6600A7BE4E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = FB83BD982CD85E6600A7BE4E /* GoogleService-Info.plist */; };
 		FB83BD9D2CD8656D00A7BE4E /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FB83BD9C2CD8656D00A7BE4E /* FirebaseMessaging */; };
-		FB83BDA02CD87CE200A7BE4E /* AddFriendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB83BD9F2CD87CE200A7BE4E /* AddFriendView.swift */; };
 		FBA6BD1D2CCD696F0019A5E1 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA6BD1C2CCD696F0019A5E1 /* ProfileView.swift */; };
 		FBA6BD1F2CCDA11E0019A5E1 /* FriendRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA6BD1E2CCDA11E0019A5E1 /* FriendRequestView.swift */; };
 		FBA977F52D6B8400004BB2E1 /* GamesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA977F42D6B8400004BB2E1 /* GamesView.swift */; };
@@ -110,18 +108,20 @@
 		FB7E20AD2CBEAFC900209582 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		FB7E20B42CBF23CB00209582 /* MainMessagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMessagesView.swift; sourceTree = "<group>"; };
 		FB7E20B72CC0114600209582 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
-		FB7E20BD2CC15CAB00209582 /* ContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsView.swift; sourceTree = "<group>"; };
 		FB7E20C02CC165E400209582 /* ChatUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatUser.swift; sourceTree = "<group>"; };
 		FB7E20C42CC565EA00209582 /* ChatLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogView.swift; sourceTree = "<group>"; };
 		FB83BD902CD81ECC00A7BE4E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		FB83BD982CD85E6600A7BE4E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		FB83BD9F2CD87CE200A7BE4E /* AddFriendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriendView.swift; sourceTree = "<group>"; };
 		FBA6BD1C2CCD696F0019A5E1 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		FBA6BD1E2CCDA11E0019A5E1 /* FriendRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendRequestView.swift; sourceTree = "<group>"; };
 		FBA977F42D6B8400004BB2E1 /* GamesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamesView.swift; sourceTree = "<group>"; };
 		FBB259052D09132D004CC8CF /* Aurora.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Aurora.entitlements; sourceTree = "<group>"; };
 		FBB259062D0C96B4004CC8CF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		9FF2FB602D6EC1F300D7708A /* ContactsView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ContactsView; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		FB7E20722CBCC6E900209582 /* Frameworks */ = {
@@ -268,6 +268,7 @@
 		FB7E20772CBCC6E900209582 /* Aurora */ = {
 			isa = PBXGroup;
 			children = (
+				9FF2FB602D6EC1F300D7708A /* ContactsView */,
 				FB7E20782CBCC6E900209582 /* AuroraApp.swift */,
 				FB6764282CEEE82D00FCE17E /* Clear Button.json */,
 				FB67642A2CEEE83E00FCE17E /* Save Button.json */,
@@ -279,7 +280,6 @@
 				FB7E20B32CBF23B200209582 /* MainMessages */,
 				FB23D55A2CF76BC9003C245A /* SelfProfileView */,
 				FB42CB7E2CD5B53300283244 /* FriendGroupView */,
-				FB7E20C22CC565AF00209582 /* ContactsView */,
 				FBB505002CCEA5DF00FF1C87 /* ProfileView */,
 				FB7E20BF2CC165D500209582 /* Model */,
 				FB7E20B62CC0112C00209582 /* Utils */,
@@ -343,15 +343,6 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
-		FB7E20C22CC565AF00209582 /* ContactsView */ = {
-			isa = PBXGroup;
-			children = (
-				FB83BD9E2CD87CBB00A7BE4E /* AddFriendView */,
-				FB7E20BD2CC15CAB00209582 /* ContactsView.swift */,
-			);
-			path = ContactsView;
-			sourceTree = "<group>";
-		};
 		FB7E20C32CC565BF00209582 /* ChatLogView */ = {
 			isa = PBXGroup;
 			children = (
@@ -359,14 +350,6 @@
 				FBA977F82D6D6BB1004BB2E1 /* Games */,
 			);
 			path = ChatLogView;
-			sourceTree = "<group>";
-		};
-		FB83BD9E2CD87CBB00A7BE4E /* AddFriendView */ = {
-			isa = PBXGroup;
-			children = (
-				FB83BD9F2CD87CE200A7BE4E /* AddFriendView.swift */,
-			);
-			path = AddFriendView;
 			sourceTree = "<group>";
 		};
 		FBA977F82D6D6BB1004BB2E1 /* Games */ = {
@@ -408,6 +391,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				9FF2FB602D6EC1F300D7708A /* ContactsView */,
 			);
 			name = Aurora;
 			packageProductDependencies = (
@@ -575,9 +561,7 @@
 				FB23D5792D0125CA003C245A /* SecurityView.swift in Sources */,
 				FB23D56F2CFBB59E003C245A /* ChangeEmailView.swift in Sources */,
 				FB23D5712CFD52A8003C245A /* Scratch.swift in Sources */,
-				FB83BDA02CD87CE200A7BE4E /* AddFriendView.swift in Sources */,
 				FB0F8AFF2CF653E200A37CED /* CustomTabNavigationView.swift in Sources */,
-				FB7E20BE2CC15CAB00209582 /* ContactsView.swift in Sources */,
 				FB42CB832CD66D9E00283244 /* EditProfileView.swift in Sources */,
 				FB23D5752CFE51C8003C245A /* ChangePhoneView.swift in Sources */,
 				FB7E20792CBCC6E900209582 /* AuroraApp.swift in Sources */,
