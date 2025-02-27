@@ -4,201 +4,6 @@ import Firebase
 import FirebaseMessaging
 import FirebaseAuth
 
-class MainMessagesViewModel: ObservableObject {
-    
-    @Published var errorMessage = ""
-    @Published var chatUser: ChatUser?
-    @Published var isUserCurrentlyLoggedOut = false
-    @Published var users = [ChatUser]()
-    @Published var isLoading = false
-
-    var messageListener: ListenerRegistration?
-    var friendRequestListener: ListenerRegistration? // 新增好友申请监听器变量
-    
-    @Published var hasNewFriendRequest = false // 用于跟踪是否有新的好友申请
-    @AppStorage("lastCheckedTimestamp") var lastCheckedTimestamp: Double = 0
-    @AppStorage("lastLikesCount") var lastLikesCount: Int = 0
-    
-    
-
-    init() {
-        
-        DispatchQueue.main.async{
-            self.isUserCurrentlyLoggedOut =
-            FirebaseManager.shared.auth.currentUser?.uid == nil
-        }
-        fetchCurrentUser()
-        setupFriendListListener()
-        setupFriendRequestListener()
-    }
-
-    func setupFriendListListener() {
-        guard let uid = FirebaseManager.shared.auth.currentUser?.uid else {
-            self.errorMessage = "Could not find firebase uid"
-            return
-        }
-        isLoading = true
-
-        messageListener?.remove()
-        messageListener = nil
-
-        messageListener = FirebaseManager.shared.firestore
-            .collection("friends")
-            .document(uid)
-            .collection("friend_list")
-            .addSnapshotListener { querySnapshot, error in
-                if let error = error {
-                    self.errorMessage = "Failed to listen for friend list changes: \(error)"
-                    print("Failed to listen for friend list changes: \(error)")
-                    return
-                }
-
-                guard let documents = querySnapshot?.documents else {
-                    self.errorMessage = "No friend list documents found"
-                    return
-                }
-
-                DispatchQueue.global(qos: .background).async {
-                    var users: [ChatUser] = []
-
-                    for document in documents {
-                        let data = document.data()
-                        let user = ChatUser(data: data)
-                        if user.uid != uid {
-                            users.append(user)
-                        }
-                    }
-
-                    // 分组并排序
-                    let pinnedUsers = users.filter { $0.isPinned }.sorted {
-                        ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) > ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
-                    }
-
-                    let unpinnedUsers = users.filter { !$0.isPinned }.sorted {
-                        ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) > ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
-                    }
-
-                    DispatchQueue.main.async {
-                        self.users = pinnedUsers + unpinnedUsers
-                        self.isLoading = false
-                    }
-                    
-                }
-            }
-    }
-
-    func setupFriendRequestListener() {
-        guard let uid = FirebaseManager.shared.auth.currentUser?.uid else {
-            self.errorMessage = "Could not find firebase uid"
-            return
-        }
-
-        friendRequestListener?.remove()
-        friendRequestListener = nil
-
-        friendRequestListener = FirebaseManager.shared.firestore
-            .collection("friend_request")
-            .document(uid)
-            .collection("request_list")
-            .whereField("status", isEqualTo: "pending")
-            .addSnapshotListener { [weak self] snapshot, error in
-                if let error = error {
-                    print("Failed to listen for friend requests: \(error)")
-                    return
-                }
-
-                guard let documents = snapshot?.documents else { return }
-
-                DispatchQueue.main.async {
-                    // 如果有未处理的好友申请，设置 hasNewFriendRequest 为 true
-                    self?.hasNewFriendRequest = !documents.isEmpty
-                }
-            }
-    }
-    
-    func stopListening() {
-        
-        messageListener?.remove()
-        messageListener = nil
-        friendRequestListener?.remove()
-        friendRequestListener = nil
-    }
-
-    func fetchCurrentUser() {
-        
-        
-        guard let uid = FirebaseManager.shared.auth.currentUser?.uid else {
-            self.errorMessage = "Could not find firebase uid"
-            return
-        }
-        isLoading = true
-
-        FirebaseManager.shared.firestore.collection("users").document(uid).getDocument { snapshot, error in
-            if let error = error {
-                self.errorMessage = "Failed to fetch current user: \(error)"
-                print("Failed to fetch current user:", error)
-                return
-            }
-            
-            guard let data = snapshot?.data() else {
-                self.errorMessage = "No data found"
-                return
-            }
-            
-            DispatchQueue.main.async {
-                self.chatUser = ChatUser(data: data)
-            }
-            
-        }
-    }
-    
-    func markMessageAsSeen(for userId: String) {
-        guard let currentUserId = FirebaseManager.shared.auth.currentUser?.uid else {
-            self.errorMessage = "Could not find firebase uid"
-            return
-        }
-        
-        // Reference to the user's friend list
-        let friendRef = FirebaseManager.shared.firestore
-            .collection("friends")
-            .document(currentUserId)
-            .collection("friend_list")
-            .document(userId)
-        
-        // Update `hasUnseenLatestMessage` to false
-        friendRef.updateData(["hasUnseenLatestMessage": false]) { error in
-            if let error = error {
-                print("Failed to update hasUnseenLatestMessage: \(error)")
-                return
-            }
-            print("Successfully updated hasUnseenLatestMessage to false")
-        }
-    }
-    
-    func handleSignOut() {
-        guard let currentUserID = FirebaseManager.shared.auth.currentUser?.uid else { return }
-        
-        // Reference to the user's FCM token in Firestore
-        let userRef = FirebaseManager.shared.firestore.collection("users").document(currentUserID)
-        
-        // Update the FCM token to an empty string
-        userRef.updateData(["fcmToken": ""]) { error in
-            if let error = error {
-                print("Failed to update FCM token: \(error)")
-                return
-            }
-            
-            // Proceed to sign out if the FCM token update is successful
-            DispatchQueue.main.async {
-                self.isUserCurrentlyLoggedOut.toggle()
-                try? FirebaseManager.shared.auth.signOut()
-            }
-        }
-    }
-}
-
-
-
 struct MainMessagesView: View {
     @State private var shouldShowLogOutOptions = false
     @State private var shouldNavigateToChatLogView = false
@@ -217,6 +22,35 @@ struct MainMessagesView: View {
     @State private var showFriendRequestsView = false
     @Binding var currentView: String
     @AppStorage("lastCarouselClosedTime") private var lastCarouselClosedTime: Double = 0
+    
+    private var combinedChats: [(id: String, isPinned: Bool, latestTimestamp: Date, isGroup: Bool, user: ChatUser?, group: GroupChat?)] {
+        // Map users to tuples.
+        let userChats: [(id: String, isPinned: Bool, latestTimestamp: Date, isGroup: Bool, user: ChatUser?, group: GroupChat?)] = vm.users.map { user in
+            return (
+                id: "user_\(user.uid)",
+                isPinned: user.isPinned,
+                latestTimestamp: user.latestMessageTimestamp?.dateValue() ?? Date.distantPast,
+                isGroup: false,
+                user: user,
+                group: nil as GroupChat?
+            )
+        }
+        // Map groups to tuples.
+        let groupChats: [(id: String, isPinned: Bool, latestTimestamp: Date, isGroup: Bool, user: ChatUser?, group: GroupChat?)] = vm.groups.map { group in
+            return (
+                id: "group_\(group.uid)",
+                isPinned: group.isPinned,
+                latestTimestamp: group.latestMessageTimestamp?.dateValue() ?? group.createdAt?.dateValue() ?? Date.distantPast,
+                isGroup: true,
+                user: nil as ChatUser?,
+                group: group
+            )
+        }
+        let combined = userChats + groupChats
+        let pinned = combined.filter { $0.isPinned }.sorted { $0.latestTimestamp > $1.latestTimestamp }
+        let unpinned = combined.filter { !$0.isPinned }.sorted { $0.latestTimestamp > $1.latestTimestamp }
+        return pinned + unpinned
+    }
     
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -249,153 +83,83 @@ struct MainMessagesView: View {
                         ProgressView()
                             .scaleEffect(1.5)
                             .padding(.top, UIScreen.main.bounds.height * 0.3)
-                        Text("Loading friends...")
+                        Text("Loading chats...")
                             .foregroundColor(.gray)
                             .padding(.top, 16)
                         Spacer()
                     }
-                }
-                else if vm.users.isEmpty{
+                } else if vm.users.isEmpty{
                     Image("lonelyimageformainmessageview")
-                }
-                if showCarouselView{
-                    // ScrollView with users
+                } else {
                     ScrollView {
                         LazyVStack(spacing: 8) {
-                            ForEach(vm.users) { user in
+                            ForEach(combinedChats, id: \.id) { chat in
                                 Button {
                                     generateHapticFeedbackMedium()
-                                    if let chatUser = vm.chatUser {
-                                        self.selectedUser = chatUser
+                                    if chat.isGroup, let group = chat.group {
+                                        chatLogViewModel.reset(withNewGroup: group)
+                                    } else if let user = chat.user {
+                                        self.selectedUser = user
                                         self.chatUser = user
                                         chatLogViewModel.reset(withNewUser: user)
-                                        self.shouldNavigateToChatLogView.toggle()
                                         vm.markMessageAsSeen(for: user.uid)
                                     }
+                                    self.shouldNavigateToChatLogView.toggle()
                                 } label: {
-                                    ZStack {
-                                        if user.isPinned {
-                                            Image("pinnedperson")
+                                    HStack(spacing: 16) {
+                                        if chat.isGroup, let group = chat.group {
+                                            // For group chats, use a placeholder image or the group photo.
+                                            Image("group.photo")
                                                 .resizable()
-                                                .scaledToFit()
-                                                .cornerRadius(16)
-                                        } else {
-                                            Image("notpinnedperson")
+                                                .scaledToFill()
+                                                .frame(width: 45, height: 45)
+                                                .clipShape(Circle())
+                                        } else if let user = chat.user {
+                                            // For single chats, load the user profile image.
+                                            WebImage(url: URL(string: user.profileImageUrl))
                                                 .resizable()
-                                                .scaledToFit()
-                                                .cornerRadius(16)
+                                                .scaledToFill()
+                                                .frame(width: 45, height: 45)
+                                                .clipShape(Circle())
                                         }
                                         
-                                        // Overlay Content
-                                        HStack(spacing: 16) {
-                                            ZStack{
-                                                WebImage(url: URL(string: user.profileImageUrl))
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 45, height: 45)
-                                                    .clipShape(Circle())
-                                                if user.hasUnseenLatestMessage {
-                                                    Image("reddot")
-                                                        .resizable()
-                                                        .scaledToFit()
-                                                        .frame(width: 12, height: 12)
-                                                        .offset(x: 16, y: -16)
-                                                }
-                                            }
-                                            
-                                            VStack(alignment: .leading, spacing: 4) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            if chat.isGroup, let group = chat.group {
+                                                Text(group.groupName)
+                                                    .font(.system(size: 16, weight: .bold))
+                                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                            } else if let user = chat.user {
                                                 Text(user.username)
                                                     .font(.system(size: 16, weight: .bold))
                                                     .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                                
-                                                if let timestamp = user.latestMessageTimestamp {
-                                                    Text(formatTimestamp(timestamp))
-                                                        .font(.system(size: 14))
-                                                        .foregroundColor(Color.gray)
-                                                }
                                             }
                                             
-                                            Spacer()
-                                            
+                                            Text(formatTimestamp(Timestamp(date: chat.latestTimestamp)))
+                                                .font(.system(size: 14))
+                                                .foregroundColor(Color.gray)
                                         }
-                                        .padding(.leading, 16)
+                                        Spacer()
+                                        // Unseen message indicator.
+                                        if (chat.isGroup && (chat.group?.hasUnseenLatestMessage ?? false)) ||
+                                           (!chat.isGroup && (chat.user?.hasUnseenLatestMessage ?? false)) {
+                                            Image("reddot")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 12, height: 12)
+                                        }
                                     }
                                     .padding(.horizontal, 20)
+                                    // Background image depending on pin status.
+                                    .background(
+                                        Image(chat.isPinned ? "pinnedperson" : "notpinnedperson")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .cornerRadius(16)
+                                    )
                                 }
                             }
                         }
                         .padding(.top, UIScreen.main.bounds.height * 0.07 + 171) // Start 8 points below the header
-                        Spacer(minLength: UIScreen.main.bounds.height * 0.1)
-                    }
-                }
-                
-                if !showCarouselView{
-                    // ScrollView with users
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(vm.users) { user in
-                                Button {
-                                    generateHapticFeedbackMedium()
-                                    if let chatUser = vm.chatUser {
-                                        self.selectedUser = chatUser
-                                        self.chatUser = user
-                                        chatLogViewModel.reset(withNewUser: chatUser)
-                                        self.shouldNavigateToChatLogView.toggle()
-                                        vm.markMessageAsSeen(for: user.uid)
-                                    }
-                                } label: {
-                                    ZStack {
-                                        if user.isPinned {
-                                            Image("pinnedperson")
-                                                .resizable()
-                                                .scaledToFit()
-                                                .cornerRadius(16)
-                                        } else {
-                                            Image("notpinnedperson")
-                                                .resizable()
-                                                .scaledToFit()
-                                                .cornerRadius(16)
-                                        }
-                                        
-                                        // Overlay Content
-                                        HStack(spacing: 16) {
-                                            ZStack{
-                                                WebImage(url: URL(string: user.profileImageUrl))
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 45, height: 45)
-                                                    .clipShape(Circle())
-                                                if user.hasUnseenLatestMessage {
-                                                    Image("reddot")
-                                                        .resizable()
-                                                        .scaledToFit()
-                                                        .frame(width: 12, height: 12)
-                                                        .offset(x: 16, y: -16)
-                                                }
-                                            }
-                                            
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text(user.username)
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                                
-                                                if let timestamp = user.latestMessageTimestamp {
-                                                    Text(formatTimestamp(timestamp))
-                                                        .font(.system(size: 14))
-                                                        .foregroundColor(Color.gray)
-                                                }
-                                            }
-                                            
-                                            Spacer()
-                                            
-                                        }
-                                        .padding(.leading, 16)
-                                    }
-                                    .padding(.horizontal, 20)
-                                }
-                            }
-                        }
-                        .padding(.top, UIScreen.main.bounds.height * 0.07 + 8) // Start 8 points below the header
                         Spacer(minLength: UIScreen.main.bounds.height * 0.1)
                     }
                 }
@@ -516,66 +280,6 @@ struct MainMessagesView: View {
         }
         .onDisappear {
             vm.stopListening()
-        }
-    }
-
-    
-    private var usersListView: some View {
-        ScrollView {
-            ForEach(vm.users) { user in
-                VStack {
-                    Button {
-                        if let chatUser = vm.chatUser {
-                            self.selectedUser = chatUser
-                            self.chatUser = user
-                            self.shouldNavigateToChatLogView.toggle()
-                            vm.markMessageAsSeen(for: user.uid)
-                        }
-                    } label: {
-                        HStack(spacing: 16) {
-                            ZStack{
-                                WebImage(url: URL(string: user.profileImageUrl))
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 64, height: 64)
-                                    .cornerRadius(64)
-                                    .overlay(RoundedRectangle(cornerRadius: 64).stroke(Color.black, lineWidth: 1))
-                                    .shadow(radius: 5)
-                                if user.hasUnseenLatestMessage {
-                                    Image("reddot")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 12, height: 12)
-                                        .offset(x: 2, y: -12)
-                                }
-                            }
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(user.username)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(Color(.label))
-                                
-                                // 显示最新聊天时间
-                                if let timestamp = user.latestMessageTimestamp {
-                                    Text(formatTimestamp(timestamp))
-                                        .font(.system(size: 14))
-                                        .foregroundColor(Color.gray)
-                                } else {
-                                    Text("暂无消息")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(Color.gray)
-                                }
-                            }
-                            Spacer()
-                            
-                        }
-                        .padding()
-                        .background(user.isPinned ? Color.gray.opacity(0.2) : Color.clear)
-                        .cornerRadius(8)
-                    }
-                    Divider().padding(.vertical, 8)
-                }
-                .padding(.horizontal)
-            }
         }
     }
     

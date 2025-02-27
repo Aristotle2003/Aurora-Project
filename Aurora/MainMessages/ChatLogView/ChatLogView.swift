@@ -54,6 +54,8 @@ class ChatLogViewModel: ObservableObject {
     private var listenerForSavingTrigger: ListenerRegistration?
     @Published var showImageSuccess = false
     
+    @Published var groupChat: GroupChat? = nil
+    
     
     @Published var statusMessage = ""
     
@@ -768,6 +770,28 @@ class ChatLogViewModel: ObservableObject {
                 }
                 print("Message saved successfully.")
             }
+    }
+    
+    func reset(withNewGroup group: GroupChat) {
+        // Stop any existing listeners/timers
+        stopListening()
+        stopListeningForActiveStatus()
+        stopListeningForSavingTrigger()
+        stopListeningForImages()
+        stopAutoSend()
+        
+        // Reset relevant properties
+        self.showImagePicker = false
+        self.receivedImages = []
+        self.chatText = ""
+        self.errorMessage = ""
+        self.latestSenderMessage = nil
+        self.latestRecipientMessage = nil
+        self.hasUnseenImages = false
+        
+        // Set the group chat; clear any ChatUser info
+        self.groupChat = group
+        self.chatUser = nil
     }
     
     deinit {
