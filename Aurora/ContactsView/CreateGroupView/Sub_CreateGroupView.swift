@@ -175,8 +175,6 @@ struct Sub_CreateGroupView: View {
                     "createdBy": currentUserUID,
                     "createdAt": Timestamp(date: Date()),
                     "latestMessageTimestamp": Timestamp(date: Date()),
-                    "isPinned": false,
-                    "hasUnseenLatestMessage": false
                 ]
                 
                 // Minimal group info to store in each user's group_list subcollection.
@@ -184,7 +182,9 @@ struct Sub_CreateGroupView: View {
                     "groupID": groupID,
                     "groupName": groupName,
                     "groupPhoto": groupPhotoURL,
-                    "createdAt": Timestamp(date: Date())
+                    "createdAt": Timestamp(date: Date()),
+                    "isPinned": false,
+                    "hasUnseenLatestMessage": false
                 ]
                 
                 let batch = db.batch()

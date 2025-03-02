@@ -123,34 +123,75 @@ class MainMessagesViewModel: ObservableObject {
         groupListener?.remove()
         groupListener = nil
         
+        // Listen to the current user's group_list subcollection.
         groupListener = FirebaseManager.shared.firestore
-            .collection("groups")
-            .whereField("members", arrayContains: uid)
+            .collection("users")
+            .document(uid)
+            .collection("group_list")
             .addSnapshotListener { querySnapshot, error in
                 if let error = error {
-                    self.errorMessage = "Failed to listen for group changes: \(error)"
-                    print("Failed to listen for groups: \(error)")
+                    self.errorMessage = "Failed to listen for group_list changes: \(error)"
+                    print("Failed to listen for group_list changes: \(error)")
                     return
                 }
                 guard let documents = querySnapshot?.documents else {
-                    self.errorMessage = "No group documents found"
+                    self.errorMessage = "No group_list documents found"
                     return
                 }
+                
                 var fetchedGroups: [GroupChat] = []
+                let dispatchGroup = DispatchGroup()
+                
+                // For each document in group_list, fetch the group info from the "groups" collection.
                 for document in documents {
-                    let data = document.data()
-                    if let group = GroupChat(data: data) {
-                        fetchedGroups.append(group)
+                    let userGroupData = document.data() // Contains isPinned, hasUnseenLatestMessage, etc.
+                    let groupId = document.documentID
+                    
+                    dispatchGroup.enter()
+                    FirebaseManager.shared.firestore
+                        .collection("groups")
+                        .document(groupId)
+                        .getDocument { snapshot, error in
+                            defer { dispatchGroup.leave() }
+                            
+                            if let error = error {
+                                print("Failed to fetch group data for group \(groupId): \(error)")
+                                return
+                            }
+                            guard let snapshot = snapshot, let groupData = snapshot.data() else {
+                                print("No group data found for group \(groupId)")
+                                return
+                            }
+                            
+                            // Merge the two dictionaries.
+                            var combinedData = groupData
+                            // Ensure the group id is stored under "groupID"
+                            combinedData["groupID"] = groupId
+                            // Override UI-related fields with values from the user's group_list doc.
+                            combinedData["isPinned"] = userGroupData["isPinned"] as? Bool ?? false
+                            combinedData["hasUnseenLatestMessage"] = userGroupData["hasUnseenLatestMessage"] as? Bool ?? false
+                            
+                            // Optionally, override latestMessageTimestamp if it's stored in group_list.
+                            if let latestTS = userGroupData["latestMessageTimestamp"] as? Timestamp {
+                                combinedData["latestMessageTimestamp"] = latestTS
+                            }
+                            
+                            if let group = GroupChat(data: combinedData) {
+                                fetchedGroups.append(group)
+                            }
+                        }
+                }
+                
+                dispatchGroup.notify(queue: .main) {
+                    // Sort pinned and unpinned groups.
+                    let pinnedGroups = fetchedGroups.filter { $0.isPinned }.sorted {
+                        ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) >
+                        ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
                     }
-                }
-                // Sort pinned and unpinned groups.
-                let pinnedGroups = fetchedGroups.filter { $0.isPinned }.sorted {
-                    ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) > ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
-                }
-                let unpinnedGroups = fetchedGroups.filter { !$0.isPinned }.sorted {
-                    ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) > ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
-                }
-                DispatchQueue.main.async {
+                    let unpinnedGroups = fetchedGroups.filter { !$0.isPinned }.sorted {
+                        ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) >
+                        ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
+                    }
                     self.groups = pinnedGroups + unpinnedGroups
                 }
             }

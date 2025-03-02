@@ -90,7 +90,8 @@ struct MainMessagesView: View {
                     }
                 } else if vm.users.isEmpty{
                     Image("lonelyimageformainmessageview")
-                } else {
+                }
+                if showCarouselView{
                     ScrollView {
                         LazyVStack(spacing: 8) {
                             ForEach(combinedChats, id: \.id) { chat in
@@ -102,65 +103,68 @@ struct MainMessagesView: View {
                                         self.selectedUser = user
                                         self.chatUser = user
                                         chatLogViewModel.reset(withNewUser: user)
+                                        self.shouldNavigateToChatLogView.toggle()
                                         vm.markMessageAsSeen(for: user.uid)
                                     }
-                                    self.shouldNavigateToChatLogView.toggle()
                                 } label: {
-                                    HStack(spacing: 16) {
-                                        if chat.isGroup, let group = chat.group {
-                                            // For group chats, use a placeholder image or the group photo.
-                                            Image("group.photo")
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 45, height: 45)
-                                                .clipShape(Circle())
-                                        } else if let user = chat.user {
-                                            // For single chats, load the user profile image.
-                                            WebImage(url: URL(string: user.profileImageUrl))
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 45, height: 45)
-                                                .clipShape(Circle())
-                                        }
-                                        
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            if chat.isGroup, let group = chat.group {
-                                                Text(group.groupName)
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                            } else if let user = chat.user {
-                                                Text(user.username)
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
-                                            }
-                                            
-                                            Text(formatTimestamp(Timestamp(date: chat.latestTimestamp)))
-                                                .font(.system(size: 14))
-                                                .foregroundColor(Color.gray)
-                                        }
-                                        Spacer()
-                                        // Unseen message indicator.
-                                        if (chat.isGroup && (chat.group?.hasUnseenLatestMessage ?? false)) ||
-                                           (!chat.isGroup && (chat.user?.hasUnseenLatestMessage ?? false)) {
-                                            Image("reddot")
-                                                .resizable()
-                                                .scaledToFit()
-                                                .frame(width: 12, height: 12)
-                                        }
-                                    }
-                                    .padding(.horizontal, 20)
-                                    // Background image depending on pin status.
-                                    .background(
+                                    ZStack {
                                         Image(chat.isPinned ? "pinnedperson" : "notpinnedperson")
                                             .resizable()
                                             .scaledToFit()
                                             .cornerRadius(16)
-                                    )
+                                        HStack(spacing: 16) {
+                                            // Unseen message indicator.
+                                            ZStack {
+                                                if chat.isGroup, let group = chat.group {
+                                                    // For group chats, use a placeholder image or the group photo.
+                                                    WebImage(url: URL(string: group.profileImageUrl))
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 45, height: 45)
+                                                        .clipShape(Circle())
+                                                } else if let user = chat.user {
+                                                    // For single chats, load the user profile image.
+                                                    WebImage(url: URL(string: user.groupPhoto))
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 45, height: 45)
+                                                        .clipShape(Circle())
+                                                }
+                                                if (chat.isGroup && (chat.group?.hasUnseenLatestMessage ?? false)) ||
+                                                    (!chat.isGroup && (chat.user?.hasUnseenLatestMessage ?? false)) {
+                                                    Image("reddot")
+                                                        .resizable()
+                                                        .scaledToFit()
+                                                        .frame(width: 12, height: 12)
+                                                }
+                                            }
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                if chat.isGroup, let group = chat.group {
+                                                    Text(group.groupName)
+                                                        .font(.system(size: 16, weight: .bold))
+                                                        .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                                } else if let user = chat.user {
+                                                    Text(user.username)
+                                                        .font(.system(size: 16, weight: .bold))
+                                                        .foregroundColor(Color(red: 0.49, green: 0.52, blue: 0.75))
+                                                }
+                                                
+                                                Text(formatTimestamp(Timestamp(date: chat.latestTimestamp)))
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(Color.gray)
+                                            }
+                                            Spacer()
+                                        }
+                                        .padding(.leading, 16)
+                                        }
+                                        .padding(.horizontal, 20)
+                                        // Background image depending on pin status.
+                                    }
                                 }
                             }
-                        }
-                        .padding(.top, UIScreen.main.bounds.height * 0.07 + 171) // Start 8 points below the header
-                        Spacer(minLength: UIScreen.main.bounds.height * 0.1)
+                            .padding(.top, UIScreen.main.bounds.height * 0.07 + 171) // Start 8 points below the header
+                            Spacer(minLength: UIScreen.main.bounds.height * 0.1)
                     }
                 }
                 
