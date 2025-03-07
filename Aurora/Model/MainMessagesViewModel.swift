@@ -183,14 +183,12 @@ class MainMessagesViewModel: ObservableObject {
                 }
                 
                 dispatchGroup.notify(queue: .main) {
-                    // Sort pinned and unpinned groups.
+                    // Now sort and update self.groups after all asynchronous fetches are complete.
                     let pinnedGroups = fetchedGroups.filter { $0.isPinned }.sorted {
-                        ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) >
-                        ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
+                        ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) > ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
                     }
                     let unpinnedGroups = fetchedGroups.filter { !$0.isPinned }.sorted {
-                        ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) >
-                        ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
+                        ($0.latestMessageTimestamp?.dateValue() ?? Date.distantPast) > ($1.latestMessageTimestamp?.dateValue() ?? Date.distantPast)
                     }
                     self.groups = pinnedGroups + unpinnedGroups
                 }

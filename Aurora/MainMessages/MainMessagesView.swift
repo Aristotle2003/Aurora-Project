@@ -4,6 +4,15 @@ import Firebase
 import FirebaseMessaging
 import FirebaseAuth
 
+struct ChatEntry: Identifiable {
+    var id: String
+    let isPinned: Bool
+    let latestTimestamp: Date
+    let isGroup: Bool
+    let user: ChatUser?
+    let group: GroupChat?
+}
+
 struct MainMessagesView: View {
     @State private var shouldShowLogOutOptions = false
     @State private var shouldNavigateToChatLogView = false
@@ -23,35 +32,46 @@ struct MainMessagesView: View {
     @Binding var currentView: String
     @AppStorage("lastCarouselClosedTime") private var lastCarouselClosedTime: Double = 0
     
-    private var combinedChats: [(id: String, isPinned: Bool, latestTimestamp: Date, isGroup: Bool, user: ChatUser?, group: GroupChat?)] {
-        // Map users to tuples.
-        let userChats: [(id: String, isPinned: Bool, latestTimestamp: Date, isGroup: Bool, user: ChatUser?, group: GroupChat?)] = vm.users.map { user in
-            return (
+    private var combinedChats: [ChatEntry] {
+        // Map users into ChatEntry
+        let userChats: [ChatEntry] = vm.users.map { user in
+            let timestamp = user.latestMessageTimestamp?.dateValue() ?? Date.distantPast
+            return ChatEntry(
                 id: "user_\(user.uid)",
                 isPinned: user.isPinned,
-                latestTimestamp: user.latestMessageTimestamp?.dateValue() ?? Date.distantPast,
+                latestTimestamp: timestamp,
                 isGroup: false,
                 user: user,
-                group: nil as GroupChat?
+                group: nil
             )
         }
-        // Map groups to tuples.
-        let groupChats: [(id: String, isPinned: Bool, latestTimestamp: Date, isGroup: Bool, user: ChatUser?, group: GroupChat?)] = vm.groups.map { group in
-            return (
+        
+        // Map groups into ChatEntry
+        let groupChats: [ChatEntry] = vm.groups.map { group in
+            let timestamp = group.latestMessageTimestamp?.dateValue() ?? group.createdAt?.dateValue() ?? Date.distantPast
+            return ChatEntry(
                 id: "group_\(group.uid)",
                 isPinned: group.isPinned,
-                latestTimestamp: group.latestMessageTimestamp?.dateValue() ?? group.createdAt?.dateValue() ?? Date.distantPast,
+                latestTimestamp: timestamp,
                 isGroup: true,
-                user: nil as ChatUser?,
+                user: nil,
                 group: group
             )
         }
+        
+        // Combine userChats and groupChats
         let combined = userChats + groupChats
-        let pinned = combined.filter { $0.isPinned }.sorted { $0.latestTimestamp > $1.latestTimestamp }
-        let unpinned = combined.filter { !$0.isPinned }.sorted { $0.latestTimestamp > $1.latestTimestamp }
+        
+        // Separate and sort pinned entries
+        let pinned = combined.filter { $0.isPinned }
+                              .sorted { $0.latestTimestamp > $1.latestTimestamp }
+        
+        // Separate and sort unpinned entries
+        let unpinned = combined.filter { !$0.isPinned }
+                               .sorted { $0.latestTimestamp > $1.latestTimestamp }
+        
         return pinned + unpinned
     }
-    
     func generateHapticFeedbackMedium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.prepare()
@@ -94,7 +114,7 @@ struct MainMessagesView: View {
                 if showCarouselView{
                     ScrollView {
                         LazyVStack(spacing: 8) {
-                            ForEach(combinedChats, id: \.id) { chat in
+                            ForEach(combinedChats) { chat in
                                 Button {
                                     generateHapticFeedbackMedium()
                                     if chat.isGroup, let group = chat.group {
@@ -117,14 +137,14 @@ struct MainMessagesView: View {
                                             ZStack {
                                                 if chat.isGroup, let group = chat.group {
                                                     // For group chats, use a placeholder image or the group photo.
-                                                    WebImage(url: URL(string: group.profileImageUrl))
+                                                    WebImage(url: URL(string: group.groupPhoto))
                                                         .resizable()
                                                         .scaledToFill()
                                                         .frame(width: 45, height: 45)
                                                         .clipShape(Circle())
                                                 } else if let user = chat.user {
                                                     // For single chats, load the user profile image.
-                                                    WebImage(url: URL(string: user.groupPhoto))
+                                                    WebImage(url: URL(string: user.profileImageUrl))
                                                         .resizable()
                                                         .scaledToFill()
                                                         .frame(width: 45, height: 45)
@@ -316,7 +336,6 @@ struct MainMessagesView: View {
         }
     }
 }
-
 struct CarouselView: View {
     let items = [
         "CarouselPicture1"
